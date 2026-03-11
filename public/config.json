@@ -1,0 +1,535 @@
+{
+  "intro": {
+    "riddle": "Soy algo que crece cuando lo compartes, pero muere si lo ocultas. ¿Qué soy?",
+    "answer": "amor",
+    "hints": [
+      "No se compra con dinero",
+      "Todos lo buscan algún día",
+      "Es lo que siento por ti"
+    ],
+    "type": "multiple",
+    "options": [
+      "Amor",
+      "Odio",
+      "Miedo",
+      "Dinero"
+    ]
+  },
+  "birthdayScene": {
+    "music": "/audio/birthday.mp3",
+    "message": "Hoy celebramos que llegaste al mundo ❤️",
+    "subMessage": "Cada día a tu lado es el mejor regalo que me ha dado la vida."
+  },
+  "photoSession": {
+    "title": "Guarda un recuerdo",
+    "subtitle": "Un descanso especial antes de continuar 📸",
+    "totalPhotos": 1
+  },
+  "stops": [
+    {
+      "id": "argentina",
+      "title": "Argentina",
+      "emoji": "🇦🇷",
+      "hiddenName": false,
+      "revealNameAtPercent": 30,
+      "challenges": [
+        {
+          "id": "argentina_r1",
+          "title": "Recuerdo 1",
+          "riddle": {
+            "riddle": "¿Qué une más nuestros corazones?",
+            "answer": "confianza",
+            "hints": [
+              "No se compra",
+              "Se construye",
+              "Es base del amor"
+            ],
+            "type": "multiple",
+            "options": [
+              "Confianza",
+              "Distancia",
+              "Rutina",
+              "Silencio"
+            ]
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/love-story.mp4",
+            "label": "Video sorpresa"
+          }
+        },
+        {
+          "id": "argentina_r2",
+          "title": "Recuerdo 2",
+          "riddle": {
+            "riddle": "¿Qué siempre quiero provocar en ti?",
+            "answer": "sonrisa",
+            "hints": [
+              "Empieza con S",
+              "Es felicidad",
+              "Se nota en tu cara"
+            ],
+            "type": "multiple",
+            "options": [
+              "Sonrisa",
+              "Duda",
+              "Enojo",
+              "Cansancio"
+            ]
+          },
+          "media": {
+            "type": "image",
+            "src": "/images/argentina-1.jpg",
+            "label": "Foto especial"
+          }
+        },
+        {
+          "id": "argentina_r3",
+          "title": "Llamada",
+          "riddle": {
+            "riddle": "¿Qué siempre quiero escuchar de ti?",
+            "answer": "tu voz",
+            "hints": [
+              "Me calma",
+              "Me alegra",
+              "Sale de tu corazón"
+            ],
+            "type": "multiple",
+            "options": [
+              "Tu voz",
+              "El ruido",
+              "El silencio",
+              "La prisa"
+            ]
+          },
+          "media": {
+            "type": "call",
+            "label": "Llamada sorpresa"
+          }
+        }
+      ]
+    },
+    {
+      "id": "supia",
+      "title": "Supía",
+      "emoji": "🌄",
+      "hiddenName": true,
+      "revealNameAtPercent": 30,
+      "challenges": [
+        {
+          "id": "supia_r1",
+          "title": "Paisaje 1",
+          "riddle": {
+            "riddle": "¿Qué color te queda hermoso?",
+            "answer": "rojo",
+            "hints": [
+              "Color pasión",
+              "También en rosas",
+              "Te hace brillar"
+            ],
+            "type": "multiple",
+            "options": [
+              "Rojo",
+              "Gris",
+              "Marrón",
+              "Negro"
+            ]
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/memories.mp4",
+            "label": "Video"
+          }
+        },
+        {
+          "id": "supia_r2",
+          "title": "Paisaje 2",
+          "riddle": {
+            "riddle": "¿Qué prefieres para una cita?",
+            "answer": "atardecer",
+            "hints": [
+              "Hora dorada",
+              "Cielo hermoso",
+              "Antes de la noche"
+            ],
+            "type": "multiple",
+            "options": [
+              "Atardecer",
+              "Madrugada",
+              "Mediodía",
+              "Lluvia fuerte"
+            ]
+          },
+          "media": {
+            "type": "image",
+            "src": "/images/supia-1.jpg",
+            "label": "Foto"
+          }
+        },
+        {
+          "id": "supia_r3",
+          "title": "Conexión",
+          "riddle": {
+            "riddle": "¿Qué quiero repetir contigo siempre?",
+            "answer": "momentos",
+            "hints": [
+              "No son cosas",
+              "Se viven",
+              "Se recuerdan"
+            ],
+            "type": "multiple",
+            "options": [
+              "Momentos",
+              "Excusas",
+              "Olvidos",
+              "Dudas"
+            ]
+          },
+          "media": {
+            "type": "call",
+            "label": "Llamada"
+          }
+        }
+      ]
+    },
+    {
+      "id": "medellin",
+      "title": "Medellín",
+      "emoji": "🌆",
+      "hiddenName": true,
+      "revealNameAtPercent": 30,
+      "challenges": [
+        {
+          "id": "medellin_r1",
+          "title": "Ciudad 1",
+          "riddle": {
+            "riddle": "¿Qué me enamora de ti cada día?",
+            "answer": "tu forma",
+            "hints": [
+              "No es física",
+              "Es única",
+              "Es tu esencia"
+            ],
+            "type": "multiple",
+            "options": [
+              "Tu forma",
+              "Tu prisa",
+              "Tu enojo",
+              "Tu distancia"
+            ]
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/dreams.mp4",
+            "label": "Video"
+          }
+        },
+        {
+          "id": "medellin_r2",
+          "title": "Ciudad 2",
+          "riddle": {
+            "riddle": "¿Qué quiero construir contigo?",
+            "answer": "futuro",
+            "hints": [
+              "Mirando adelante",
+              "Con planes",
+              "Tú y yo"
+            ],
+            "type": "multiple",
+            "options": [
+              "Futuro",
+              "Distancia",
+              "Temor",
+              "Duda"
+            ]
+          },
+          "media": {
+            "type": "image",
+            "src": "/images/medellin-1.jpg",
+            "label": "Imagen"
+          }
+        },
+        {
+          "id": "medellin_r3",
+          "title": "Conexión",
+          "riddle": {
+            "riddle": "¿Qué nunca debería faltarnos?",
+            "answer": "comunicacion",
+            "hints": [
+              "Hablar",
+              "Escuchar",
+              "Entender"
+            ],
+            "type": "multiple",
+            "options": [
+              "Comunicación",
+              "Silencio",
+              "Orgullo",
+              "Frialdad"
+            ]
+          },
+          "media": {
+            "type": "call",
+            "label": "Llamada"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bogota",
+      "title": "Bogotá",
+      "emoji": "🏙️",
+      "hiddenName": false,
+      "revealNameAtPercent": 30,
+      "challenges": [
+        {
+          "id": "bogota_r1",
+          "title": "Capital 1",
+          "riddle": {
+            "riddle": "¿Qué me da paz de nuestra relación?",
+            "answer": "equilibrio",
+            "hints": [
+              "Ni mucho ni poco",
+              "Nos ordena",
+              "Nos cuida"
+            ],
+            "type": "multiple",
+            "options": [
+              "Equilibrio",
+              "Caos",
+              "Duda",
+              "Temor"
+            ]
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/adventures.mp4",
+            "label": "Video"
+          }
+        },
+        {
+          "id": "bogota_r2",
+          "title": "Capital 2",
+          "riddle": {
+            "riddle": "¿Qué quiero celebrar contigo siempre?",
+            "answer": "logros",
+            "hints": [
+              "Metas cumplidas",
+              "Alegría",
+              "Orgullo bonito"
+            ],
+            "type": "multiple",
+            "options": [
+              "Logros",
+              "Fracasos",
+              "Rencores",
+              "Excusas"
+            ]
+          },
+          "media": {
+            "type": "image",
+            "src": "/images/bogota-1.jpg",
+            "label": "Imagen"
+          }
+        },
+        {
+          "id": "bogota_r3",
+          "title": "Conexión",
+          "riddle": {
+            "riddle": "¿Qué quiero escucharte decir más?",
+            "answer": "te amo",
+            "hints": [
+              "Dos palabras",
+              "Muy especiales",
+              "Nacen del corazón"
+            ],
+            "type": "multiple",
+            "options": [
+              "Te amo",
+              "No sé",
+              "Tal vez",
+              "Después"
+            ]
+          },
+          "media": {
+            "type": "call",
+            "label": "Llamada"
+          }
+        }
+      ]
+    },
+    {
+      "id": "carepa",
+      "title": "Carepa",
+      "emoji": "🌴",
+      "hiddenName": true,
+      "revealNameAtPercent": 30,
+      "challenges": [
+        {
+          "id": "carepa_r1",
+          "title": "Destino 1",
+          "riddle": {
+            "riddle": "¿Qué quiero darte todos los días?",
+            "answer": "cuidado",
+            "hints": [
+              "Protección",
+              "Atención",
+              "Amor en acciones"
+            ],
+            "type": "multiple",
+            "options": [
+              "Cuidado",
+              "Descuido",
+              "Olvido",
+              "Distancia"
+            ]
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/future.mp4",
+            "label": "Video"
+          }
+        },
+        {
+          "id": "carepa_r2",
+          "title": "Destino 2",
+          "riddle": {
+            "riddle": "¿Qué no debería faltarnos jamás?",
+            "answer": "respeto",
+            "hints": [
+              "Base",
+              "Límites sanos",
+              "Valorarnos"
+            ],
+            "type": "multiple",
+            "options": [
+              "Respeto",
+              "Orgullo",
+              "Desorden",
+              "Frialdad"
+            ]
+          },
+          "media": {
+            "type": "image",
+            "src": "/images/carepa-1.jpg",
+            "label": "Imagen"
+          }
+        },
+        {
+          "id": "carepa_r3",
+          "title": "Conexión",
+          "riddle": {
+            "riddle": "¿Qué quiero que siempre ganemos juntos?",
+            "answer": "tiempo",
+            "hints": [
+              "No vuelve",
+              "Es valioso",
+              "Hay que aprovecharlo"
+            ],
+            "type": "multiple",
+            "options": [
+              "Tiempo",
+              "Prisa",
+              "Distancia",
+              "Ruido"
+            ]
+          },
+          "media": {
+            "type": "call",
+            "label": "Llamada"
+          }
+        }
+      ]
+    },
+    {
+      "id": "inglaterra",
+      "title": "Inglaterra",
+      "emoji": "🇬🇧",
+      "hiddenName": false,
+      "revealNameAtPercent": 30,
+      "challenges": [
+        {
+          "id": "inglaterra_r1",
+          "title": "Final 1",
+          "riddle": {
+            "riddle": "¿Qué sueño quiero cumplir contigo?",
+            "answer": "viajar",
+            "hints": [
+              "Maletas",
+              "Nuevos lugares",
+              "Juntos"
+            ],
+            "type": "multiple",
+            "options": [
+              "Viajar",
+              "Esperar",
+              "Aplazar",
+              "Dudar"
+            ]
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/love-story.mp4",
+            "label": "Video"
+          }
+        },
+        {
+          "id": "inglaterra_r2",
+          "title": "Final 2",
+          "riddle": {
+            "riddle": "¿Qué somos cuando estamos juntos?",
+            "answer": "equipo",
+            "hints": [
+              "Dos personas",
+              "Mismo objetivo",
+              "Nos apoyamos"
+            ],
+            "type": "multiple",
+            "options": [
+              "Equipo",
+              "Rivales",
+              "Extraños",
+              "Duda"
+            ]
+          },
+          "media": {
+            "type": "image",
+            "src": "/images/inglaterra-1.jpg",
+            "label": "Imagen"
+          }
+        },
+        {
+          "id": "inglaterra_r3",
+          "title": "Final 3",
+          "riddle": {
+            "riddle": "¿Qué capítulo quiero escribir contigo?",
+            "answer": "para siempre",
+            "hints": [
+              "Largo",
+              "Bonito",
+              "Sin final cercano"
+            ],
+            "type": "multiple",
+            "options": [
+              "Para siempre",
+              "Temporal",
+              "A medias",
+              "Sin rumbo"
+            ]
+          },
+          "media": {
+            "type": "call",
+            "label": "Llamada final"
+          }
+        }
+      ]
+    }
+  ],
+  "final": {
+    "title": "El último regalo",
+    "emoji": "🎁",
+    "callEndpoint": "/incoming-call",
+    "finalMessage": "Este fue solo el comienzo de lo que quiero vivir contigo ❤️",
+    "finalSubMessage": "Gracias por existir y por ser parte de mi vida."
+  }
+}

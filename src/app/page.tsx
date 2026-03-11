@@ -1,65 +1,197 @@
-import Image from "next/image";
+'use client';
+import { useEffect, useState, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
+
+import { loadConfig, BirthdayConfig, StopConfig } from '@/lib/config';
+import { useRecording } from '@/hooks/useRecording';
+
+import RosePetals from '@/components/RosePetals';
+import WelcomeScreen from '@/components/WelcomeScreen';
+import BirthdayScene from '@/components/BirthdayScene';
+import MapView from '@/components/MapView';
+import FinalScreen from '@/components/FinalScreen';
+
+const SurpriseCall = dynamic(() => import('@/components/SurpriseCall'), { ssr: false });
+const PhotoSession = dynamic(() => import('@/components/PhotoSession'), { ssr: false });
+
+type Phase = 'welcome' | 'birthday-scene' | 'photo-session' | 'map' | 'surprise-call' | 'final';
 
 export default function Home() {
+  const [config, setConfig] = useState<BirthdayConfig | null>(null);
+  const [phase, setPhase] = useState<Phase>('welcome');
+
+  // Stops state
+  const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
+  const [solvedChallengeIds, setSolvedChallengeIds] = useState<Set<string>>(new Set());
+  const [viewedMediaIds, setViewedMediaIds] = useState<Set<string>>(new Set());
+  const [hangingPhotos, setHangingPhotos] = useState<string[]>([]);
+
+  const { state: recordingState, start: startRecording, stop: stopRecording } = useRecording();
+
+  useEffect(() => {
+    loadConfig().then(setConfig).catch(console.error);
+  }, []);
+
+  const handleStart = useCallback(async () => {
+    await startRecording();
+  }, [startRecording]);
+
+  const handlePhotoCaptured = useCallback((photoDataUrl: string) => {
+    setHangingPhotos((prev) => [...prev, photoDataUrl]);
+  }, []);
+
+  const handleSelectStop = useCallback((stop: StopConfig) => {
+    setSelectedStopId((prev) => (prev === stop.id ? null : stop.id));
+  }, []);
+
+  const handleChallengeSolved = useCallback((challengeId: string) => {
+    setSolvedChallengeIds((prev) => new Set([...prev, challengeId]));
+  }, []);
+
+  const handleMediaViewed = useCallback((challengeId: string) => {
+    setViewedMediaIds((prev) => new Set([...prev, challengeId]));
+  }, []);
+
+  const allCompleted = config
+    ? config.stops.every((stop) => stop.challenges.every((c) => viewedMediaIds.has(c.id)))
+    : false;
+
+  if (!config) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }} style={{ fontSize: 40 }}>
+          🌹
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="romantic-bg" style={{ position: 'relative', minHeight: '100vh' }}>
+      <RosePetals count={12} />
+
+
+      {hangingPhotos.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 14,
+            left: 14,
+            zIndex: 9999,
+            width: 164,
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              height: 2,
+              width: 148,
+              margin: '0 auto 8px',
+              background: 'linear-gradient(90deg, rgba(95, 48, 57, 0.45), rgba(158, 86, 100, 0.45))',
+              borderRadius: 999,
+            }}
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {hangingPhotos.map((photo, i) => (
+              <div key={`${photo.slice(0, 24)}-${i}`} style={{ display: 'flex', justifyContent: 'center' }}>
+                <div style={{ width: 1, height: 14, background: 'rgba(95, 48, 57, 0.45)' }} />
+                <div
+                  style={{
+                    marginTop: 14,
+                    marginLeft: -1,
+                    background: '#fff',
+                    border: '1px solid rgba(95, 48, 57, 0.25)',
+                    borderRadius: 6,
+                    padding: '4px 4px 10px',
+                    boxShadow: '0 4px 12px rgba(44, 36, 40, 0.2)',
+                    transform: `rotate(${i % 2 === 0 ? -4 : 3}deg)`,
+                    width: 108,
+                  }}
+                >
+                  <img
+                    src={photo}
+                    alt={`Foto recuerdo ${i + 1}`}
+                    style={{ width: '100%', height: 78, objectFit: 'cover', borderRadius: 4, display: 'block', transform: 'scaleX(-1)' }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      )}
+
+      <AnimatePresence mode="wait">
+        {phase === 'welcome' && (
+          <motion.div key="welcome" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <WelcomeScreen
+              riddle={config.intro}
+              recordingState={recordingState}
+              onStart={handleStart}
+              onSolved={() => setPhase('birthday-scene')}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          </motion.div>
+        )}
+
+
+        {phase === 'birthday-scene' && (
+          <motion.div key="birthday-scene" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <BirthdayScene
+              music={config.birthdayScene.music}
+              message={config.birthdayScene.message}
+              subMessage={config.birthdayScene.subMessage}
+              onContinue={() => setPhase('photo-session')}
+            />
+          </motion.div>
+        )}
+
+        {phase === 'photo-session' && (
+          <motion.div key="photo-session" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <PhotoSession
+              title={config.photoSession.title}
+              subtitle={config.photoSession.subtitle}
+              totalPhotos={config.photoSession.totalPhotos}
+              onPhotoCaptured={handlePhotoCaptured}
+              onContinue={() => setPhase('map')}
+            />
+          </motion.div>
+        )}
+
+        {phase === 'map' && (
+          <motion.div key="map" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ height: '100vh' }}>
+            <MapView
+              stops={config.stops}
+              solvedChallengeIds={solvedChallengeIds}
+              viewedMediaIds={viewedMediaIds}
+              selectedStopId={selectedStopId}
+              allCompleted={allCompleted}
+              onSelectStop={handleSelectStop}
+              onChallengeSolved={handleChallengeSolved}
+              onMediaViewed={handleMediaViewed}
+              onFinalClick={() => setPhase('surprise-call')}
+              finalTitle={config.final.title}
+              finalEmoji={config.final.emoji}
+            />
+          </motion.div>
+        )}
+
+        {phase === 'surprise-call' && (
+          <motion.div key="surprise-call" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <SurpriseCall onCallEnded={() => setPhase('final')} />
+          </motion.div>
+        )}
+
+        {phase === 'final' && (
+          <motion.div key="final" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <FinalScreen
+              message={config.final.finalMessage}
+              subMessage={config.final.finalSubMessage}
+              recordingState={recordingState}
+              onStopRecording={stopRecording}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </main>
   );
 }
