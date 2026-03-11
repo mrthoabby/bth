@@ -30,7 +30,7 @@
       "id": "supia",
       "title": "Supía",
       "emoji": "🌄",
-      "hiddenName": true,
+      "hiddenName": false,
       "revealNameAtPercent": 30,
       "challenges": [
         {
@@ -113,7 +113,7 @@
       "id": "medayork",
       "title": "Medayork",
       "emoji": "🌆",
-      "hiddenName": true,
+      "hiddenName": false,
       "revealNameAtPercent": 30,
       "challenges": [
         {
@@ -196,7 +196,7 @@
       "id": "laestrella",
       "title": "La Estrella",
       "emoji": "⭐",
-      "hiddenName": true,
+      "hiddenName": false,
       "revealNameAtPercent": 30,
       "challenges": [
         {
@@ -277,9 +277,9 @@
     },
     {
       "id": "medayork2",
-      "title": "De nuevo Medayork",
+      "title": "Medayork",
       "emoji": "🏙️",
-      "hiddenName": true,
+      "hiddenName": false,
       "revealNameAtPercent": 30,
       "challenges": [
         {
@@ -362,7 +362,7 @@
       "id": "lejano",
       "title": "Un lugar muy lejano",
       "emoji": "🌌",
-      "hiddenName": true,
+      "hiddenName": false,
       "revealNameAtPercent": 30,
       "challenges": [
         {

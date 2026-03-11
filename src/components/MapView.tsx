@@ -175,6 +175,7 @@ const ISLAND_DEFS: IslandDef[] = [
       { type: 'flower', dx: -42, dy: -14, s: 1.1, color: '#ff80a0' },
     ],
     labelDy: -70,
+    iconSrc: '/sorpresa.webp',
     description: 'Ciudad entre dos mundos: la magia eterna de Medellín y la energía sin límites de Nueva York. Aquí el cielo no tiene techo.',
     hint: '¿Qué ciudad te hizo sentir que todo es posible? 🌆',
   },
@@ -194,6 +195,7 @@ const ISLAND_DEFS: IslandDef[] = [
       { type: 'pine', dx: 52, dy: -18, s: 0.9 },
     ],
     labelDy: -72,
+    iconSrc: '/house.png',
     description: 'Un lugar que lleva tu destino en el nombre. Brillante, especial, irrepetible. La estrella que ilumina este camino eres tú.',
     hint: '¿Cuántas estrellas hacen falta para saber que eres única? ⭐',
   },
@@ -213,6 +215,7 @@ const ISLAND_DEFS: IslandDef[] = [
       { type: 'cloud', dx: -20, dy: -60, s: 0.9 },
     ],
     labelDy: -70,
+    iconSrc: '/sorpresa.webp',
     description: 'Los mejores lugares siempre merecen una segunda visita. Esta ciudad te extrañaba. Todo se siente diferente cuando ya lo conoces.',
     hint: '¿Qué tan lejos llegarías por volver a sentirte en casa? 🏙️',
   },
@@ -232,6 +235,7 @@ const ISLAND_DEFS: IslandDef[] = [
       { type: 'star', dx: 44, dy: -28, s: 1.0 },
     ],
     labelDy: -66,
+    iconSrc: '/far.png',
     description: 'Más allá del horizonte, donde el tiempo se dobla y los sueños se vuelven reales. Tan lejos... y sin embargo, tan cerca del corazón.',
     hint: 'La distancia es solo un número cuando el amor no tiene fronteras. 🌌',
   },
@@ -699,40 +703,20 @@ export default function MapView({
             </g>
           ))}
 
-          {/* Islands */}
+          {/* Islands — always render all, final island (no matching stop) shows as locked */}
           {ISLAND_DEFS.map((def) => {
             const stop = stops.find((s) => s.id === def.stopId);
-            if (!stop) return null;
-            const { solved, total } = stopProgress(stop, solvedChallengeIds);
-            const completed = solved === total;
+            const completed = stop ? stopProgress(stop, solvedChallengeIds).solved === stopProgress(stop, solvedChallengeIds).total : false;
             return <Island key={def.stopId} def={def} completed={completed} />;
-          })}
-
-          {/* Custom image icons inside SVG (supia, castle) */}
-          {ISLAND_DEFS.map((def) => {
-            if (!def.iconSrc) return null;
-            const stop = stops.find((s) => s.id === def.stopId);
-            if (!stop) return null;
-            return (
-              <image
-                key={`icon-${def.stopId}`}
-                href={def.iconSrc}
-                x={def.cx - 22}
-                y={def.cy - 62}
-                width={44}
-                height={44}
-                preserveAspectRatio="xMidYMid meet"
-                style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.7))' }}
-              />
-            );
           })}
 
           {/* Island labels */}
           {ISLAND_DEFS.map((def) => {
             const stop = stops.find((s) => s.id === def.stopId);
-            if (!stop) return null;
-            const name = stopDisplayName(stop, solvedChallengeIds);
-            const { solved, total } = stopProgress(stop, solvedChallengeIds);
+            const isFinal = def.stopId === 'inglaterra';
+            const name = stop ? stopDisplayName(stop, solvedChallengeIds) : (isFinal ? finalTitle : '???');
+            const solved = stop ? stopProgress(stop, solvedChallengeIds).solved : 0;
+            const total = stop ? stopProgress(stop, solvedChallengeIds).total : 0;
             return (
               <g key={`label-${def.stopId}`}>
                 <text
@@ -741,20 +725,22 @@ export default function MapView({
                   textAnchor="middle"
                   fontSize={13}
                   fontWeight={700}
-                  fill="rgba(255,255,255,0.92)"
+                  fill={isFinal && !stop ? 'rgba(212,168,64,0.9)' : 'rgba(255,255,255,0.92)'}
                   style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.9))' }}
                 >
                   {name}
                 </text>
-                <text
-                  x={def.cx}
-                  y={def.cy + def.labelDy + 10}
-                  textAnchor="middle"
-                  fontSize={10}
-                  fill="rgba(255,255,255,0.5)"
-                >
-                  {solved}/{total}
-                </text>
+                {stop && (
+                  <text
+                    x={def.cx}
+                    y={def.cy + def.labelDy + 10}
+                    textAnchor="middle"
+                    fontSize={10}
+                    fill="rgba(255,255,255,0.5)"
+                  >
+                    {solved}/{total}
+                  </text>
+                )}
               </g>
             );
           })}
@@ -763,12 +749,54 @@ export default function MapView({
         {/* ── HTML button overlays ── */}
         {ISLAND_DEFS.map((def) => {
           const stop = stops.find((s) => s.id === def.stopId);
-          if (!stop) return null;
+          const isFinalIsland = def.stopId === 'inglaterra';
+          const btnSize = 68;
+
+          // Final island (no stop entry) — special locked/unlocked button
+          if (!stop) {
+            return (
+              <div
+                key={def.stopId}
+                style={{
+                  position: 'absolute',
+                  left: `calc(${px(def.cx, VBX, VBW)} - ${btnSize / 2}px)`,
+                  top: `calc(${px(def.cy, VBY, VBH)} - ${btnSize / 2}px)`,
+                }}
+                onMouseEnter={() => setHoverStopId(def.stopId)}
+                onMouseLeave={() => setHoverStopId(null)}
+              >
+                <button
+                  onClick={allCompleted ? onFinalClick : undefined}
+                  style={{
+                    width: btnSize, height: btnSize,
+                    borderRadius: '50%',
+                    border: allCompleted ? '2.5px solid rgba(212,168,64,0.9)' : '2px solid rgba(255,255,255,0.25)',
+                    background: allCompleted ? 'rgba(212,168,64,0.15)' : 'rgba(8,14,24,0.55)',
+                    cursor: allCompleted ? 'pointer' : 'default',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    backdropFilter: 'blur(6px)',
+                    boxShadow: allCompleted ? '0 0 28px rgba(212,168,64,0.55)' : '0 3px 12px rgba(0,0,0,0.5)',
+                    transition: 'all 0.3s',
+                    outline: 'none', position: 'relative',
+                    filter: allCompleted ? 'none' : 'grayscale(0.4) opacity(0.7)',
+                  }}
+                >
+                  {def.iconSrc
+                    ? <img src={def.iconSrc} style={{ width: 48, height: 48, objectFit: 'contain', pointerEvents: 'none' }} />
+                    : <span style={{ fontSize: 28 }}>{finalEmoji}</span>
+                  }
+                  {/* Progress ring */}
+                  <svg style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} viewBox={`0 0 ${btnSize} ${btnSize}`} width={btnSize} height={btnSize}>
+                    <circle cx={btnSize/2} cy={btnSize/2} r={btnSize/2-3} fill="none" stroke={allCompleted ? 'rgba(212,168,64,0.5)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
+                  </svg>
+                </button>
+              </div>
+            );
+          }
+
           const { solved, total, percent } = stopProgress(stop, solvedChallengeIds);
           const allViewed = stop.challenges.every((c) => viewedMediaIds.has(c.id));
           const isSelected = selectedStopId === def.stopId;
-          const hasIcon = !!def.iconSrc;
-          const btnSize = hasIcon ? 62 : 56;
 
           return (
             <div
@@ -791,21 +819,21 @@ export default function MapView({
                     ? '2.5px solid rgba(255,220,100,0.95)'
                     : isSelected
                     ? '2.5px solid rgba(255,255,255,0.95)'
-                    : '2px solid rgba(255,255,255,0.38)',
+                    : '2px solid rgba(255,255,255,0.35)',
                   background: allViewed
-                    ? 'rgba(255,200,60,0.25)'
+                    ? 'rgba(255,200,60,0.18)'
                     : isSelected
-                    ? 'rgba(255,255,255,0.2)'
-                    : 'rgba(8,14,24,0.58)',
+                    ? 'rgba(255,255,255,0.15)'
+                    : 'rgba(8,14,24,0.45)',
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 1,
+                  gap: 2,
                   backdropFilter: 'blur(5px)',
                   boxShadow: allViewed
-                    ? '0 0 22px rgba(255,200,60,0.6)'
+                    ? '0 0 24px rgba(255,200,60,0.6)'
                     : isSelected
                     ? '0 0 16px rgba(255,255,255,0.35)'
                     : '0 3px 12px rgba(0,0,0,0.5)',
@@ -814,17 +842,21 @@ export default function MapView({
                   position: 'relative',
                 }}
               >
-                {/* Emoji (only shown when no custom icon SVG) */}
-                {!hasIcon && (
-                  <span style={{ fontSize: 24, lineHeight: 1 }}>{stop.emoji}</span>
-                )}
+                {/* Icon image or emoji */}
+                {def.iconSrc
+                  ? <img src={def.iconSrc} style={{ width: 46, height: 46, objectFit: 'contain', pointerEvents: 'none', borderRadius: '50%' }} />
+                  : <span style={{ fontSize: 26, lineHeight: 1 }}>{stop.emoji}</span>
+                }
+                {/* Solved counter */}
                 {total > 0 && (
                   <span style={{
+                    position: 'absolute',
+                    bottom: 4,
                     fontSize: 9,
-                    color: allViewed ? '#ffd060' : 'rgba(255,255,255,0.8)',
+                    color: allViewed ? '#ffd060' : 'rgba(255,255,255,0.85)',
                     fontWeight: 700,
                     lineHeight: 1,
-                    marginTop: hasIcon ? 26 : 0,
+                    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
                   }}>
                     {solved}/{total}
                   </span>
@@ -840,7 +872,7 @@ export default function MapView({
                   <circle
                     cx={btnSize / 2} cy={btnSize / 2} r={btnSize / 2 - 3}
                     fill="none"
-                    stroke={allViewed ? 'rgba(255,220,80,0.6)' : 'rgba(255,255,255,0.12)'}
+                    stroke={allViewed ? 'rgba(255,220,80,0.55)' : 'rgba(255,255,255,0.12)'}
                     strokeWidth={3}
                   />
                   {percent > 0 && (
