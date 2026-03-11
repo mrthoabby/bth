@@ -800,9 +800,9 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
             const isTop = i === photos.length - 1;
             // Each photo behind the top is offset a bit
             const behind = photos.length - 1 - i;
-            const rotate = (i % 2 === 0 ? 1 : -1) * (behind * 3 + 1);
-            const tx = behind * -4;
-            const ty = behind * 2;
+            const rotate = (i % 2 === 0 ? 1 : -1) * (behind * 4 + 2);
+            const tx = behind * -3;
+            const ty = behind * -3;
             return (
               <motion.div
                 key={i}
