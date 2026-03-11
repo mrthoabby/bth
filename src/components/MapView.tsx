@@ -556,9 +556,9 @@ function CallVideoCard({ label, onPlay }: { label?: string; onPlay: () => void }
 }
 
 function ChallengeMedia({
-  challenge, onViewed, onSurpriseCall, autoPlay = true,
+  challenge, onViewed, onSurpriseCall, autoPlay = true, onPhotoCapture,
 }: {
-  challenge: StopChallengeConfig; onViewed: () => void; onSurpriseCall?: () => void; autoPlay?: boolean;
+  challenge: StopChallengeConfig; onViewed: () => void; onSurpriseCall?: () => void; autoPlay?: boolean; onPhotoCapture?: () => void;
 }) {
   if (challenge.media.type === 'video' && challenge.media.src) {
     return (
@@ -569,6 +569,7 @@ function ChallengeMedia({
           onFinished={onViewed}
           compact
           autoPlay={autoPlay}
+          onPhotoCapture={onPhotoCapture}
         />
         {challenge.media.label && (
           <p style={{
@@ -634,6 +635,7 @@ function NodeModal({
   onBadgeEarned,
   onSurpriseCall,
   onContinue,
+  onPhotoCapture,
 }: {
   stop: StopConfig;
   solvedChallengeIds: Set<string>;
@@ -643,6 +645,7 @@ function NodeModal({
   onBadgeEarned: (challengeId: string, label: string) => void;
   onSurpriseCall?: () => void;
   onContinue: () => void;
+  onPhotoCapture?: () => void;
 }) {
   const firstUnsolved = stop.challenges.find((c) => !solvedChallengeIds.has(c.id));
   const [activeChallengeId, setActiveChallengeId] = useState<string>(
@@ -922,6 +925,7 @@ function NodeModal({
                         onViewed={() => onMediaViewed(activeChallenge.id)}
                         onSurpriseCall={onSurpriseCall}
                         autoPlay={justSolvedId === activeChallenge.id}
+                        onPhotoCapture={onPhotoCapture}
                       />
                     </div>
 
@@ -1036,6 +1040,7 @@ interface Props {
   onParisClick: () => void;
   finalTitle: string;
   finalEmoji: string;
+  onPhotoCapture?: () => void;
 }
 
 // ─── Map intro parchment ──────────────────────────────────────────────────────
@@ -1205,6 +1210,7 @@ export default function MapView({
   onParisClick,
   finalTitle,
   finalEmoji,
+  onPhotoCapture,
 }: Props) {
   const modalStop = selectedStopId ? stops.find((s) => s.id === selectedStopId) ?? null : null;
   const [hoverStopId, setHoverStopId] = useState<string | null>(null);
@@ -1932,6 +1938,7 @@ export default function MapView({
             onClose={onDeselectStop}
             onBadgeEarned={handleBadgeEarned}
             onSurpriseCall={onSurpriseCall}
+            onPhotoCapture={onPhotoCapture}
             onContinue={() => {
               checkIslandGaby(modalStop, earnedBadges);
               const nextId = NEXT_STOP[modalStop.id];

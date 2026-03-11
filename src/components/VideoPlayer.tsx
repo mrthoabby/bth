@@ -9,18 +9,31 @@ interface Props {
   onFinished: () => void;
   compact?: boolean;
   autoPlay?: boolean;
+  onPhotoCapture?: () => void;
 }
 
-export default function VideoPlayer({ src, title, onFinished, compact = false, autoPlay = true }: Props) {
+export default function VideoPlayer({ src, title, onFinished, compact = false, autoPlay = true, onPhotoCapture }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const photoFiredRef = useRef(false);
+
+  useEffect(() => {
+    photoFiredRef.current = false; // reset if src changes
+  }, [src]);
 
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     if (autoPlay) v.play().catch(() => {});
     const onEnded = () => { setIsPlaying(false); unduckAmbientMusic(); onFinished(); };
-    const onPlay  = () => { setIsPlaying(true); duckAmbientMusic(); };
+    const onPlay  = () => {
+      setIsPlaying(true);
+      duckAmbientMusic();
+      if (!photoFiredRef.current && onPhotoCapture) {
+        photoFiredRef.current = true;
+        onPhotoCapture();
+      }
+    };
     const onPause = () => { setIsPlaying(false); unduckAmbientMusic(); };
     v.addEventListener('ended', onEnded);
     v.addEventListener('play', onPlay);

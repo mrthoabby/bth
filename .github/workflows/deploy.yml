@@ -55,6 +55,21 @@ jobs:
             if ! command -v docker &> /dev/null; then
               curl -fsSL https://get.docker.com | sh
             fi
+            # Instalar Caddy si no está (HTTPS automático)
+            if ! command -v caddy &> /dev/null; then
+              apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl 2>/dev/null || true
+              curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+              curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+              apt-get update && apt-get install -y caddy
+            fi
+            # Configurar Caddy como reverse proxy con HTTPS automático
+            cat > /etc/caddy/Caddyfile << 'CADDYEOF'
+            34.72.1.126.nip.io {
+              reverse_proxy localhost:3000
+            }
+            CADDYEOF
+            systemctl enable caddy
+            systemctl restart caddy
             # Crear carpeta y .env si no existen
             mkdir -p /root/bth/uploads
             if [ ! -f /root/bth/.env ]; then
@@ -73,7 +88,7 @@ jobs:
             docker run -d \
               --name bth \
               --restart unless-stopped \
-              -p 80:3000 \
+              -p 127.0.0.1:3000:3000 \
               --env-file /root/bth/.env \
               -v /root/bth/uploads:/app/uploads \
               ghcr.io/${{ env.IMAGE_NAME }}:latest

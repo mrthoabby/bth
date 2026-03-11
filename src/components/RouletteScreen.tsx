@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface Props { onDone: () => void; }
+interface Props { onDone: () => void; onPhotoCapture?: () => void; }
 
 const SEGS = [
   { label: 'Desayuno en Café Saudade', emoji: '☕', color: '#9e1c1c' },
@@ -121,7 +121,7 @@ function playDrone(ac: AudioContext) {
   } catch { /* ignore */ }
 }
 
-export default function RouletteScreen({ onDone }: Props) {
+export default function RouletteScreen({ onDone, onPhotoCapture }: Props) {
   const [spinning, setSpinning]   = useState(false);
   const [rotation, setRotation]   = useState(0);
   const [done, setDone]           = useState(false);
@@ -156,6 +156,7 @@ export default function RouletteScreen({ onDone }: Props) {
           setSpinning(false);
           setDone(true);
           setRevealing(false);
+          onPhotoCapture?.();
         }, 700); // 700ms suspense after last tick
       });
     } else {

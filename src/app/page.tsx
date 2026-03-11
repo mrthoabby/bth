@@ -74,6 +74,25 @@ export default function Home() {
     setHangingPhotos((prev) => [...prev, photoDataUrl]);
   }, []);
 
+  // Silently capture a frame from the live camera stream
+  const captureFromCam = useCallback(() => {
+    if (!camStream) return;
+    const track = camStream.getVideoTracks()[0];
+    if (!track) return;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ic = new (window as any).ImageCapture(track);
+      ic.grabFrame().then((bitmap: ImageBitmap) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        canvas.getContext('2d')!.drawImage(bitmap, 0, 0);
+        bitmap.close();
+        handlePhotoCaptured(canvas.toDataURL('image/jpeg', 0.9));
+      }).catch(() => {});
+    } catch { /* ImageCapture not supported */ }
+  }, [camStream, handlePhotoCaptured]);
+
   const handleSelectStop = useCallback((stop: StopConfig) => {
     setSelectedStopId((prev) => (prev === stop.id ? null : stop.id));
   }, []);
@@ -296,6 +315,7 @@ export default function Home() {
               onParisClick={() => setOverlay('paris-modal')}
               finalTitle={config.final.title}
               finalEmoji={config.final.emoji}
+              onPhotoCapture={captureFromCam}
             />
           </motion.div>
         )}
@@ -375,7 +395,7 @@ export default function Home() {
               )}
 
               {overlay === 'roulette' && (
-                <RouletteScreen onDone={() => setOverlay('surprise-call')} />
+                <RouletteScreen onDone={() => setOverlay('surprise-call')} onPhotoCapture={captureFromCam} />
               )}
 
               {overlay === 'final' && (
