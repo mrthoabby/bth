@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { StopConfig, StopChallengeConfig } from '@/lib/config';
 import RiddleScreen from './RiddleScreen';
 import VideoPlayer from './VideoPlayer';
-import { playBadge, playUnlock, playWhoosh, playParchmentOpen, playIslandHover, startAmbientMusic, stopAmbientMusic } from '@/lib/sounds';
+import { playBadge, playUnlock, playWhoosh, playParchmentOpen, playIslandHover, startAmbientMusic, stopAmbientMusic, duckAmbientMusic, unduckAmbientMusic } from '@/lib/sounds';
 
 // ─── ViewBox constants ────────────────────────────────────────────────────────
 const VBX = -50, VBY = -50, VBW = 1080, VBH = 690;
@@ -656,6 +656,12 @@ function NodeModal({
 
   const activeChallenge = stop.challenges.find((c) => c.id === activeChallengeId) ?? stop.challenges[0];
   const solved = solvedChallengeIds.has(activeChallenge.id);
+
+  // Duck ambient music while modal is open; restore when it closes
+  useEffect(() => {
+    duckAmbientMusic(300);
+    return () => { unduckAmbientMusic(500); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const displayName = stopDisplayName(stop, solvedChallengeIds);
   const islandIconSrc = ISLAND_DEFS.find((d) => d.stopId === stop.id)?.iconSrc;
   const hasMultiple = stop.challenges.length > 1;
