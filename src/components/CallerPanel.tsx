@@ -341,8 +341,29 @@ function AdminInner() {
 
   const toggleHearBirthday = useCallback(() => { setHearBirthday((v) => !v); }, []);
 
-  // Per-spectator mute (local only)
+  // ── Birthday mute commands → sent to spectators via data channel ──
+  const [bdayMutedAll, setBdayMutedAll] = useState(false);
+  const [bdayMutedFor, setBdayMutedFor] = useState<Set<string>>(new Set());
+
+  const sendBdayMute = useCallback((target: 'all' | string, muted: boolean) => {
+    const enc = new TextEncoder();
+    const payload = enc.encode(JSON.stringify({ type: 'birthday-mute', target, muted }));
+    if (target === 'all') {
+      room.localParticipant.publishData(payload, { reliable: true }).catch(() => {});
+      setBdayMutedAll(muted);
+    } else {
+      room.localParticipant.publishData(payload, { reliable: true, destinationIdentities: [target] }).catch(() => {});
+      setBdayMutedFor((prev) => {
+        const next = new Set(prev);
+        muted ? next.add(target) : next.delete(target);
+        return next;
+      });
+    }
+  }, [room]);
+
+  // Per-spectator mute (local only — caller doesn't hear them)
   const [mutedSpectators, setMutedSpectators] = useState<Set<string>>(new Set());
+  const [muteAllSpectators, setMuteAllSpectators] = useState(false);
   const toggleMuteSpectator = useCallback((identity: string) => {
     setMutedSpectators((prev) => {
       const next = new Set(prev);
@@ -350,14 +371,16 @@ function AdminInner() {
       return next;
     });
   }, []);
+  const toggleMuteAll = useCallback(() => { setMuteAllSpectators((v) => !v); }, []);
   useEffect(() => {
     spectators.forEach((p) => {
-      const muted = mutedSpectators.has(p.identity);
+      const muted = muteAllSpectators || mutedSpectators.has(p.identity);
       p.audioTrackPublications.forEach((pub) => {
         (pub.track as RemoteAudioTrack | undefined)?.setVolume(muted ? 0 : 1);
       });
     });
-  }, [mutedSpectators, spectators]);
+  }, [mutedSpectators, muteAllSpectators, spectators]);
+
 
   const [txPaused, setTxPaused] = useState(false);
   const toggleTx = useCallback(() => {
@@ -479,10 +502,20 @@ function AdminInner() {
                 {txPaused ? '▶' : '⏸'}
               </button>
             </div>
-            {/* Row 2: hear birthday girl toggle */}
+            {/* Row 2: hear birthday girl toggle (local) */}
             <button onClick={toggleHearBirthday} style={{ width: '100%', padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 8, background: hearBirthday ? 'rgba(212,168,64,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${hearBirthday ? 'rgba(212,168,64,0.3)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 8, color: hearBirthday ? '#f0d070' : 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12, fontFamily: 'monospace' }}>
               <span style={{ fontSize: 16 }}>{hearBirthday ? '👂' : '🙉'}</span>
               <span>{hearBirthday ? 'Escuchando a cumpleañera' : 'Cumpleañera silenciada (solo tú)'}</span>
+            </button>
+            {/* Row 3: mute birthday girl for ALL spectators */}
+            <button onClick={() => sendBdayMute('all', !bdayMutedAll)} style={{ width: '100%', padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 8, background: bdayMutedAll ? 'rgba(200,60,60,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${bdayMutedAll ? 'rgba(200,60,60,0.35)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 8, color: bdayMutedAll ? '#f09090' : 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12, fontFamily: 'monospace' }}>
+              <span style={{ fontSize: 16 }}>{bdayMutedAll ? '🔇' : '🔊'}</span>
+              <span>{bdayMutedAll ? 'Cumple silenciada para espectadores' : 'Espectadores escuchan cumple'}</span>
+            </button>
+            {/* Row 4: mute ALL spectators locally (caller doesn't hear any) */}
+            <button onClick={toggleMuteAll} style={{ width: '100%', padding: '7px 10px', display: 'flex', alignItems: 'center', gap: 8, background: muteAllSpectators ? 'rgba(200,60,60,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${muteAllSpectators ? 'rgba(200,60,60,0.35)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 8, color: muteAllSpectators ? '#f09090' : 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12, fontFamily: 'monospace' }}>
+              <span style={{ fontSize: 16 }}>{muteAllSpectators ? '🔇' : '👥'}</span>
+              <span>{muteAllSpectators ? 'Espectadores silenciados (solo tú)' : 'Escuchando a todos'}</span>
             </button>
           </div>
 
@@ -523,8 +556,15 @@ function AdminInner() {
                     <div style={{ padding: '5px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3dc878', boxShadow: '0 0 5px #3dc878', flexShrink: 0 }} />
                       <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{name}</span>
-                      <button onClick={() => toggleMuteSpectator(p.identity)} title={mutedSpectators.has(p.identity) ? 'Activar audio' : 'Silenciar'} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: 0.65, padding: '0 2px', flexShrink: 0 }}>
+                      <button onClick={() => toggleMuteSpectator(p.identity)} title={mutedSpectators.has(p.identity) ? 'Activar su audio (tú)' : 'Silenciar su audio (tú)'} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: 0.65, padding: '0 2px', flexShrink: 0 }}>
                         {mutedSpectators.has(p.identity) ? '🔇' : '🔊'}
+                      </button>
+                      <button
+                        onClick={() => sendBdayMute(p.identity, !bdayMutedFor.has(p.identity))}
+                        title={bdayMutedFor.has(p.identity) ? 'Dejar escuchar cumple' : 'Silenciar cumple para este'}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, opacity: 0.65, padding: '0 2px', flexShrink: 0 }}
+                      >
+                        {bdayMutedFor.has(p.identity) ? '🎂🔇' : '🎂'}
                       </button>
                     </div>
                   </div>
@@ -623,7 +663,7 @@ export default function CallerPanel() {
   }
 
   return (
-    <LiveKitRoom token={token} serverUrl={serverUrl} connect video={true} audio={true}>
+    <LiveKitRoom token={token} serverUrl={serverUrl} connect video={true} audio={false}>
       <AdminInner />
     </LiveKitRoom>
   );

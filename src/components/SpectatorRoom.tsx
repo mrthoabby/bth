@@ -7,9 +7,10 @@ import {
   useTracks,
   VideoTrack,
   useParticipants,
+  RoomAudioRenderer,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { Track, RoomEvent } from 'livekit-client';
+import { Track, RoomEvent, RemoteAudioTrack } from 'livekit-client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ChatMessage {
@@ -302,6 +303,8 @@ function VideoGrid({ myName }: { myName: string }) {
 // ─── Room inner ───────────────────────────────────────────────────────────────
 function RoomInner({ myName }: { myName: string }) {
   const room = useRoomContext();
+  const participants = useParticipants();
+  const [birthdayMuted, setBirthdayMuted] = useState(false);
 
   useEffect(() => {
     // Camera on, mic OFF — spectators watch silently (chat only)
@@ -310,11 +313,40 @@ function RoomInner({ myName }: { myName: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Listen for commands from the caller
+  useEffect(() => {
+    const decoder = new TextDecoder();
+    const handler = (payload: Uint8Array) => {
+      try {
+        const msg = JSON.parse(decoder.decode(payload));
+        if (msg.type === 'birthday-mute') {
+          const forMe = msg.target === 'all' || msg.target === room.localParticipant.identity;
+          if (forMe) setBirthdayMuted(!!msg.muted);
+        }
+      } catch { /* ignore */ }
+    };
+    room.on(RoomEvent.DataReceived, handler);
+    return () => { room.off(RoomEvent.DataReceived, handler); };
+  }, [room]);
+
+  // Apply birthday girl volume whenever birthdayMuted or participants change
+  useEffect(() => {
+    const birthdayP = participants.find((p) => p.identity.startsWith('birthday'));
+    if (!birthdayP) return;
+    birthdayP.audioTrackPublications.forEach((pub) => {
+      (pub.track as RemoteAudioTrack | undefined)?.setVolume(birthdayMuted ? 0 : 1);
+    });
+  }, [birthdayMuted, participants]);
+
+
   return (
+    <>
+    <RoomAudioRenderer />
     <div style={{ display: 'flex', height: '100vh', background: '#050912', overflow: 'hidden' }}>
       <VideoGrid myName={myName} />
       <ChatPanel myName={myName} />
     </div>
+    </>
   );
 }
 
@@ -411,7 +443,7 @@ export default function SpectatorRoom() {
       serverUrl={serverUrl}
       connect={true}
       video={true}
-      audio={true}
+      audio={false}
     >
       <RoomInner myName={myName} />
     </LiveKitRoom>

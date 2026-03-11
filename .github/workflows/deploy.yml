@@ -73,7 +73,7 @@ jobs:
             docker run -d \
               --name bth \
               --restart unless-stopped \
-              -p 3000:3000 \
+              -p 80:3000 \
               --env-file /root/bth/.env \
               -v /root/bth/uploads:/app/uploads \
               ghcr.io/${{ env.IMAGE_NAME }}:latest

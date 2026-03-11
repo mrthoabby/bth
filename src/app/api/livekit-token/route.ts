@@ -27,12 +27,18 @@ export async function GET(req: NextRequest) {
     ttl: '4h',
   });
 
+  // Spectators may only publish camera — never microphone
+  const canPublishSources = role === 'spectator'
+    ? ['camera']
+    : undefined; // undefined = all sources allowed
+
   at.addGrant({
     room: ROOM_NAME,
     roomJoin: true,
     canPublish: true,
     canSubscribe: true,
     canPublishData: true,
+    ...(canPublishSources ? { canPublishSources } : {}),
   });
 
   const token = await at.toJwt();
