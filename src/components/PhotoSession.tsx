@@ -796,10 +796,10 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
           animate={{ opacity: 1, y: 0 }}
           style={{ position: 'relative', width: 80, height: 92, flexShrink: 0 }}
         >
-          {photos.map((src, i) => {
-            const isTop = i === photos.length - 1;
+          {photos.slice(-3).map((src, i, arr) => {
+            const isTop = i === arr.length - 1;
             // Each photo behind the top is offset a bit
-            const behind = photos.length - 1 - i;
+            const behind = arr.length - 1 - i;
             const rotate = (i % 2 === 0 ? 1 : -1) * (behind * 4 + 2);
             const tx = behind * -3;
             const ty = behind * -3;
