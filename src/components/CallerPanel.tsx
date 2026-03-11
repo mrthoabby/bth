@@ -470,6 +470,17 @@ function AdminInner() {
                 {birthdayScreen && (
                   <div style={{ position: 'absolute', top: 8, left: 10, fontSize: 10, color: 'rgba(180,220,255,0.8)', background: 'rgba(0,0,0,0.6)', borderRadius: 5, padding: '2px 8px' }}>🖥 Pantalla</div>
                 )}
+                {/* PiP: birthday cam when screen share is active */}
+                {birthdayScreen && birthdayCam && (
+                  <div style={{
+                    position: 'absolute', bottom: 12, right: 12,
+                    width: 160, height: 112, borderRadius: 10, overflow: 'hidden',
+                    border: '2px solid rgba(232,69,90,0.7)',
+                    boxShadow: '0 0 18px rgba(232,69,90,0.35)', zIndex: 10,
+                  }}>
+                    <VideoTrack trackRef={birthdayCam} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                )}
               </motion.div>
             ) : (
               <motion.div key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>

@@ -72,6 +72,7 @@ jobs:
             systemctl restart caddy
             # Crear carpeta y .env si no existen
             mkdir -p /root/bth/uploads
+            chmod 777 /root/bth/uploads
             if [ ! -f /root/bth/.env ]; then
               cat > /root/bth/.env << 'ENVEOF'
             LIVEKIT_API_KEY=REEMPLAZA

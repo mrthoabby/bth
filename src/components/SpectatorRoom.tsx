@@ -169,8 +169,10 @@ function ChatPanel({ myName }: { myName: string }) {
 function VideoGrid({ myName }: { myName: string }) {
   const participants = useParticipants();
 
-  const camTracks = useTracks([Track.Source.Camera], { onlySubscribed: true });
-  const screenTracks = useTracks([Track.Source.ScreenShare], { onlySubscribed: true });
+  const camTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
+    .filter((t) => t.participant != null && t.publication != null);
+  const screenTracks = useTracks([Track.Source.ScreenShare], { onlySubscribed: false })
+    .filter((t) => t.participant != null && t.publication != null);
 
   // birthday girl's screen or camera shown in main area
   const birthdayScreen = screenTracks.find((t) => t.participant.identity.startsWith('birthday'));

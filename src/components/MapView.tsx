@@ -1428,7 +1428,10 @@ export default function MapView({
           {ISLAND_DEFS.map((def) => {
             const stop = stops.find((s) => s.id === def.stopId);
             const isFinal = def.stopId === 'inglaterra';
-            const name = stop ? stopDisplayName(stop, solvedChallengeIds) : (isFinal ? finalTitle : '???');
+            const accessible = stop ? isStopAccessible(def.stopId, stops, solvedChallengeIds) : true;
+            const name = stop
+              ? (accessible ? stopDisplayName(stop, solvedChallengeIds) : '???')
+              : (isFinal ? finalTitle : '???');
             const { solved, total } = stop ? stopProgress(stop, solvedChallengeIds) : { solved: 0, total: 0 };
             const remaining = total - solved;
             const allDone = stop ? stop.challenges.every((c) => solvedChallengeIds.has(c.id)) : false;
@@ -1464,7 +1467,7 @@ export default function MapView({
                 {stop && (
                   <g transform={`translate(${def.cx + pillW / 2 + 14}, ${pillY + pillH / 2})`}>
                     <circle r={11}
-                      fill={allDone ? 'rgba(60,180,80,0.92)' : remaining > 0 ? 'rgba(20,20,40,0.85)' : 'rgba(60,180,80,0.92)'}
+                      fill={allDone ? 'rgba(60,180,80,0.92)' : 'rgba(20,20,40,0.85)'}
                       stroke={allDone ? 'rgba(100,230,120,0.6)' : 'rgba(255,255,255,0.3)'}
                       strokeWidth={1.5}
                     />
@@ -1475,7 +1478,7 @@ export default function MapView({
                       fontWeight={700}
                       fill="#fff"
                     >
-                      {allDone ? '✓' : `🔒${remaining}`}
+                      {allDone ? '✓' : (!accessible ? '🔒' : `${remaining}`)}
                     </text>
                   </g>
                 )}
@@ -1638,7 +1641,9 @@ export default function MapView({
                     style={{
                       width: iconSize, height: iconSize, objectFit: 'contain',
                       pointerEvents: 'none', position: 'relative', zIndex: 2,
-                      filter: allViewed
+                      filter: !accessible
+                        ? 'grayscale(0.7) opacity(0.55)'
+                        : allViewed
                         ? 'drop-shadow(0 4px 14px rgba(255,200,60,0.55))'
                         : isSelected
                         ? 'drop-shadow(0 3px 10px rgba(255,255,255,0.4))'
