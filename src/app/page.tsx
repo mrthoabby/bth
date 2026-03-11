@@ -54,7 +54,7 @@ export default function Home() {
   }, []);
 
   const allCompleted = config
-    ? config.stops.every((stop) => stop.challenges.every((c) => viewedMediaIds.has(c.id)))
+    ? config.stops.every((stop) => stop.challenges.every((c) => solvedChallengeIds.has(c.id)))
     : false;
 
   if (!config) {
@@ -79,40 +79,40 @@ export default function Home() {
             top: 14,
             left: 14,
             zIndex: 9999,
-            width: 164,
+            width: 'min(92vw, 860px)',
             pointerEvents: 'none',
           }}
         >
           <div
             style={{
               height: 2,
-              width: 148,
-              margin: '0 auto 8px',
+              width: '100%',
+              margin: '0 0 10px 0',
               background: 'linear-gradient(90deg, rgba(95, 48, 57, 0.45), rgba(158, 86, 100, 0.45))',
               borderRadius: 999,
             }}
           />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
             {hangingPhotos.map((photo, i) => (
-              <div key={`${photo.slice(0, 24)}-${i}`} style={{ display: 'flex', justifyContent: 'center' }}>
-                <div style={{ width: 1, height: 14, background: 'rgba(95, 48, 57, 0.45)' }} />
+              <div key={`${photo.slice(0, 24)}-${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ width: 1, height: 22, background: 'rgba(95, 48, 57, 0.55)' }} />
                 <div
                   style={{
-                    marginTop: 14,
-                    marginLeft: -1,
+                    marginTop: 0,
+                    marginLeft: 0,
                     background: '#fff',
                     border: '1px solid rgba(95, 48, 57, 0.25)',
                     borderRadius: 6,
                     padding: '4px 4px 10px',
-                    boxShadow: '0 4px 12px rgba(44, 36, 40, 0.2)',
-                    transform: `rotate(${i % 2 === 0 ? -4 : 3}deg)`,
-                    width: 108,
+                    boxShadow: '0 8px 18px rgba(44, 36, 40, 0.24)',
+                    transform: `rotate(${i % 2 === 0 ? -7 : 5}deg)`,
+                    width: 144,
                   }}
                 >
                   <img
                     src={photo}
                     alt={`Foto recuerdo ${i + 1}`}
-                    style={{ width: '100%', height: 78, objectFit: 'cover', borderRadius: 4, display: 'block', transform: 'scaleX(-1)' }}
+                    style={{ width: '100%', height: 104, objectFit: 'cover', borderRadius: 4, display: 'block', transform: 'scaleX(-1)' }}
                   />
                 </div>
               </div>

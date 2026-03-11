@@ -10,7 +10,7 @@ interface Props {
   onPhotoCaptured?: (photoDataUrl: string) => void;
 }
 
-type Step = 'loading' | 'countdown' | 'captured' | 'collage';
+type Step = 'loading' | 'countdown' | 'captured' | 'confirm' | 'collage';
 
 async function buildCollage(photos: string[]): Promise<string> {
   const N = photos.length;
@@ -116,6 +116,172 @@ function dataURLtoBlob(dataUrl: string): Blob {
   return new Blob([arr], { type: mime });
 }
 
+function ConfirmView({ lastPhoto, saving, onContinue }: { lastPhoto: string | null; saving: boolean; onContinue: () => void }) {
+  const [lightbox, setLightbox] = useState(false);
+
+  return (
+    <div style={{
+      width: '100vw', height: '100vh',
+      background: 'radial-gradient(ellipse at 40% 30%, #1f0a14 0%, #120618 45%, #080310 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden', position: 'relative',
+    }}>
+      {/* ambient particles */}
+      {[...Array(10)].map((_, i) => (
+        <motion.div key={i}
+          animate={{ y: [0, -16, 0], opacity: [0.08, 0.2, 0.08] }}
+          transition={{ duration: 4 + i * 0.6, repeat: Infinity, delay: i * 0.4 }}
+          style={{
+            position: 'absolute',
+            left: `${8 + i * 9}%`, bottom: `${6 + (i % 5) * 10}%`,
+            width: i % 3 === 0 ? 3 : 2, height: i % 3 === 0 ? 3 : 2,
+            borderRadius: '50%',
+            background: i % 2 === 0 ? 'rgba(212,168,64,0.5)' : 'rgba(180,100,120,0.4)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Card — two columns */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.88 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.22, 0.8, 0.36, 1] }}
+        style={{
+          maxWidth: 760, width: '94vw',
+          background: 'linear-gradient(150deg, #1e0d18 0%, #2d1225 35%, #1a0912 65%, #0e0608 100%)',
+          border: '1px solid rgba(212,168,64,0.25)',
+          borderRadius: 4,
+          boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
+          position: 'relative',
+          overflow: 'hidden',
+          display: 'flex', flexDirection: 'row',
+        }}
+      >
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, rgba(212,168,64,0.5), transparent)' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, rgba(212,168,64,0.5), transparent)' }} />
+
+        {/* Left: text + button */}
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          style={{
+            flex: 1, padding: '44px 36px',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            borderRight: '1px solid rgba(212,168,64,0.12)',
+          }}
+        >
+          <p style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.24em', color: 'rgba(212,168,64,0.55)', marginBottom: 14, fontWeight: 700 }}>
+            Un recuerdo guardado
+          </p>
+          <h3 style={{
+            fontFamily: '"Playfair Display","Georgia",serif',
+            fontSize: 'clamp(18px,2.5vw,26px)',
+            fontWeight: 700, color: '#f5e8cc', lineHeight: 1.3, marginBottom: 14,
+          }}>
+            Este momento queda<br />escrito en nuestro<br />libro para siempre
+          </h3>
+          <p style={{
+            fontSize: 13, color: 'rgba(212,168,64,0.6)', fontStyle: 'italic',
+            fontFamily: '"Georgia",serif', lineHeight: 1.7, marginBottom: 32,
+          }}>
+            Guardando un recuerdo para la posteridad... 🌹
+          </p>
+          <button
+            onClick={onContinue}
+            disabled={saving}
+            style={{
+              padding: '14px 32px',
+              background: 'linear-gradient(135deg, #9e5664, #7a3848)',
+              color: '#fdf5e4', border: 'none', borderRadius: 3,
+              fontSize: 15, fontFamily: '"Georgia",serif', letterSpacing: '0.06em',
+              cursor: saving ? 'default' : 'pointer',
+              boxShadow: '0 4px 20px rgba(100,30,50,0.4)',
+              alignSelf: 'flex-start',
+            }}
+          >
+            {saving ? 'Guardando...' : 'Continuar al mapa  ❤️'}
+          </button>
+        </motion.div>
+
+        {/* Right: photo with hover zoom + click lightbox */}
+        {lastPhoto && (
+          <motion.div
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            style={{
+              width: 'clamp(220px, 38%, 340px)',
+              padding: '36px 32px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <motion.div
+              whileHover={{ scale: 1.06, rotate: 1 }}
+              onClick={() => setLightbox(true)}
+              initial={{ rotate: -3 }}
+              animate={{ rotate: -2 }}
+              transition={{ type: 'spring', stiffness: 160, damping: 18 }}
+              style={{
+                background: '#f8f5f2',
+                padding: '10px 10px 36px',
+                borderRadius: 5,
+                boxShadow: '0 8px 40px rgba(0,0,0,0.55)',
+                cursor: 'zoom-in',
+              }}
+            >
+              <img
+                src={lastPhoto}
+                alt="recuerdo"
+                style={{ width: '100%', maxWidth: 220, height: 170, objectFit: 'cover', borderRadius: 3, display: 'block', transform: 'scaleX(-1)' }}
+              />
+              <p style={{ textAlign: 'center', marginTop: 8, fontSize: 10, color: 'rgba(60,40,30,0.5)', fontFamily: '"Georgia",serif', letterSpacing: '0.05em' }}>
+                toca para ver
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightbox && lastPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightbox(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 999,
+              background: 'rgba(0,0,0,0.9)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'zoom-out',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <motion.img
+              initial={{ scale: 0.75, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.75, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 22 }}
+              src={lastPhoto}
+              alt="recuerdo"
+              style={{
+                maxWidth: '92vw', maxHeight: '88vh',
+                objectFit: 'contain',
+                borderRadius: 6,
+                boxShadow: '0 20px 80px rgba(0,0,0,0.8)',
+                transform: 'scaleX(-1)',
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function PhotoSession({ title, subtitle, totalPhotos, onContinue, onPhotoCaptured }: Props) {
   const sessionTotalPhotos = 1;
   void totalPhotos;
@@ -161,13 +327,10 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
           const next = [dataUrl];
           setPhotos(next);
 
-          buildCollage(next).then(async (url) => {
+          buildCollage(next).then((url) => {
             setCollageUrl(url);
-            setTimeout(async () => {
-              await handleSave(next, url);
-              streamRef.current?.getTracks().forEach((t) => t.stop());
-              onContinue();
-            }, 1200);
+            // Stay in 'captured' a bit so the polaroid message can be read, then confirm
+            setTimeout(() => setStep('confirm'), 2800);
           });
         }, 900);
       })
@@ -223,6 +386,17 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
     onContinue();
   }, [saved, handleSave, photos, collageUrl, onContinue]);
 
+  // ── CONFIRM VIEW ─────────────────────────────────────────────────────────
+  if (step === 'confirm') {
+    return (
+      <ConfirmView
+        lastPhoto={lastPhoto}
+        saving={saving}
+        onContinue={handleContinue}
+      />
+    );
+  }
+
   // ── COLLAGE VIEW ─────────────────────────────────────────────────────────
   if (step === 'collage') {
     return (
@@ -260,7 +434,7 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
               <img
                 src={src}
                 alt={`Foto ${i + 1}`}
-                style={{ width: '100%', borderRadius: 8, display: 'block', transform: 'scaleX(-1)' }}
+                style={{ width: '100%', borderRadius: 12, display: 'block', transform: 'scaleX(-1)' }}
               />
               <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, textAlign: 'center' }}>
                 📸 Recuerdo {i + 1}
@@ -304,13 +478,17 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 20, textAlign: 'center' }}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100vh', padding: 20, textAlign: 'center',
+        background: 'radial-gradient(ellipse at 40% 30%, #1f0a14 0%, #120618 45%, #080310 100%)',
+      }}
     >
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 36, marginBottom: 4 }}>📸</div>
-        <h2 className="serif" style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{title}</h2>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>{subtitle}</p>
+        <h2 style={{ fontFamily: '"Playfair Display","Georgia",serif', fontSize: 22, fontWeight: 700, color: '#f5e8cc', marginBottom: 4 }}>{title}</h2>
+        <p style={{ fontSize: 14, color: 'rgba(212,168,64,0.6)', fontStyle: 'italic', fontFamily: '"Georgia",serif' }}>{subtitle}</p>
       </motion.div>
 
       {/* Viewfinder */}
@@ -320,9 +498,9 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
           borderRadius: 20,
           overflow: 'hidden',
           width: '100%',
-          maxWidth: 480,
-          boxShadow: '0 4px 32px rgba(44, 36, 40, 0.14)',
-          border: '2px solid var(--border-strong)',
+          maxWidth: 760,
+          boxShadow: '0 12px 48px rgba(44, 36, 40, 0.22)',
+          border: '3px solid var(--border-strong)',
           marginBottom: 16,
           background: 'var(--bg-warm)',
         }}
@@ -331,7 +509,7 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
           ref={videoRef}
           muted
           playsInline
-          style={{ width: '100%', display: 'block', transform: 'scaleX(-1)', minHeight: 260 }}
+          style={{ width: '100%', display: 'block', transform: 'scaleX(-1)', minHeight: 420 }}
         />
 
         {/* Flash */}
@@ -391,15 +569,15 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
             >
               {/* Polaroid frame */}
               <motion.div
-                initial={{ scale: 0.55, rotate: -8 }}
-                animate={{ scale: [0.55, 1.16, 1], rotate: [-8, 3, -1] }}
-                transition={{ duration: 0.55, ease: 'easeOut' }}
+                initial={{ scale: 0.45, rotate: -10 }}
+                animate={{ scale: [0.45, 1.3, 1.02], rotate: [-10, 5, -1] }}
+                transition={{ duration: 0.65, ease: 'easeOut' }}
                 style={{
                   background: '#f8f5f2',
-                  padding: '10px 10px 32px',
-                  borderRadius: 8,
+                  padding: '14px 14px 46px',
+                  borderRadius: 12,
                   boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
-                  maxWidth: 200,
+                  maxWidth: 320,
                 }}
               >
                 <img
@@ -414,16 +592,19 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
                 style={{
-                  marginTop: 14,
-                  color: 'white',
-                  fontWeight: 600,
-                  fontSize: 15,
-                  textShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                  maxWidth: 260,
+                  marginTop: 18,
+                  color: '#f5e8cc',
+                  fontWeight: 400,
+                  fontSize: 17,
+                  fontStyle: 'italic',
+                  fontFamily: '"Playfair Display","Georgia",serif',
+                  textShadow: '0 2px 12px rgba(0,0,0,0.6)',
+                  maxWidth: 380,
+                  lineHeight: 1.5,
                 }}
               >
                 {isLastPhoto
-                  ? 'Boom, capturada. Necesito guardar un recuerdo.'
+                  ? 'Guardando un recuerdo para la posteridad... 🌹'
                   : 'Preparada tu mejor sonrisa 😊'}
               </motion.p>
             </motion.div>
@@ -448,7 +629,7 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
         key={`${step}-${photosTaken}`}
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 12 }}
+        style={{ fontSize: 14, color: 'rgba(245,232,204,0.5)', marginBottom: 12, fontFamily: '"Georgia",serif', fontStyle: 'italic' }}
       >
         {step === 'loading' && 'Iniciando...'}
         {step === 'countdown' && countdown > 0 && `📷 Foto ${photosTaken + 1} de ${sessionTotalPhotos}`}

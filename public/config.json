@@ -27,89 +27,6 @@
   },
   "stops": [
     {
-      "id": "argentina",
-      "title": "Argentina",
-      "emoji": "🇦🇷",
-      "hiddenName": false,
-      "revealNameAtPercent": 30,
-      "challenges": [
-        {
-          "id": "argentina_r1",
-          "title": "Recuerdo 1",
-          "riddle": {
-            "riddle": "¿Qué une más nuestros corazones?",
-            "answer": "confianza",
-            "hints": [
-              "No se compra",
-              "Se construye",
-              "Es base del amor"
-            ],
-            "type": "multiple",
-            "options": [
-              "Confianza",
-              "Distancia",
-              "Rutina",
-              "Silencio"
-            ]
-          },
-          "media": {
-            "type": "video",
-            "src": "/videos/love-story.mp4",
-            "label": "Video sorpresa"
-          }
-        },
-        {
-          "id": "argentina_r2",
-          "title": "Recuerdo 2",
-          "riddle": {
-            "riddle": "¿Qué siempre quiero provocar en ti?",
-            "answer": "sonrisa",
-            "hints": [
-              "Empieza con S",
-              "Es felicidad",
-              "Se nota en tu cara"
-            ],
-            "type": "multiple",
-            "options": [
-              "Sonrisa",
-              "Duda",
-              "Enojo",
-              "Cansancio"
-            ]
-          },
-          "media": {
-            "type": "image",
-            "src": "/images/argentina-1.jpg",
-            "label": "Foto especial"
-          }
-        },
-        {
-          "id": "argentina_r3",
-          "title": "Llamada",
-          "riddle": {
-            "riddle": "¿Qué siempre quiero escuchar de ti?",
-            "answer": "tu voz",
-            "hints": [
-              "Me calma",
-              "Me alegra",
-              "Sale de tu corazón"
-            ],
-            "type": "multiple",
-            "options": [
-              "Tu voz",
-              "El ruido",
-              "El silencio",
-              "La prisa"
-            ]
-          },
-          "media": {
-            "type": "call",
-            "label": "Llamada sorpresa"
-          }
-        }
-      ]
-    },
-    {
       "id": "supia",
       "title": "Supía",
       "emoji": "🌄",
@@ -193,14 +110,14 @@
       ]
     },
     {
-      "id": "medellin",
-      "title": "Medellín",
+      "id": "medayork",
+      "title": "Medayork",
       "emoji": "🌆",
       "hiddenName": true,
       "revealNameAtPercent": 30,
       "challenges": [
         {
-          "id": "medellin_r1",
+          "id": "medayork_r1",
           "title": "Ciudad 1",
           "riddle": {
             "riddle": "¿Qué me enamora de ti cada día?",
@@ -225,7 +142,7 @@
           }
         },
         {
-          "id": "medellin_r2",
+          "id": "medayork_r2",
           "title": "Ciudad 2",
           "riddle": {
             "riddle": "¿Qué quiero construir contigo?",
@@ -250,7 +167,7 @@
           }
         },
         {
-          "id": "medellin_r3",
+          "id": "medayork_r3",
           "title": "Conexión",
           "riddle": {
             "riddle": "¿Qué nunca debería faltarnos?",
@@ -276,79 +193,162 @@
       ]
     },
     {
-      "id": "bogota",
-      "title": "Bogotá",
-      "emoji": "🏙️",
-      "hiddenName": false,
+      "id": "laestrella",
+      "title": "La Estrella",
+      "emoji": "⭐",
+      "hiddenName": true,
       "revealNameAtPercent": 30,
       "challenges": [
         {
-          "id": "bogota_r1",
-          "title": "Capital 1",
+          "id": "laestrella_r1",
+          "title": "Brillo 1",
           "riddle": {
-            "riddle": "¿Qué me da paz de nuestra relación?",
-            "answer": "equilibrio",
+            "riddle": "¿Qué es lo que más brilla en ti?",
+            "answer": "sonrisa",
             "hints": [
-              "Ni mucho ni poco",
-              "Nos ordena",
-              "Nos cuida"
+              "Lo ves en tu cara",
+              "Ilumina cualquier lugar",
+              "Me derrite el corazón"
             ],
             "type": "multiple",
             "options": [
-              "Equilibrio",
-              "Caos",
-              "Duda",
-              "Temor"
+              "Sonrisa",
+              "Dinero",
+              "Orgullo",
+              "Silencio"
+            ]
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/memories.mp4",
+            "label": "Video especial"
+          }
+        },
+        {
+          "id": "laestrella_r2",
+          "title": "Brillo 2",
+          "riddle": {
+            "riddle": "¿Qué tiene el cielo que también tienes tú?",
+            "answer": "estrellas",
+            "hints": [
+              "Brillan de noche",
+              "No se pueden contar",
+              "Guían el camino"
+            ],
+            "type": "multiple",
+            "options": [
+              "Estrellas",
+              "Nubes",
+              "Lluvia",
+              "Oscuridad"
+            ]
+          },
+          "media": {
+            "type": "image",
+            "src": "/images/estrella-1.jpg",
+            "label": "Foto"
+          }
+        },
+        {
+          "id": "laestrella_r3",
+          "title": "Conexión estelar",
+          "riddle": {
+            "riddle": "¿Qué guía a los navegantes en la oscuridad?",
+            "answer": "estrella",
+            "hints": [
+              "Está en el cielo",
+              "Siempre fija",
+              "El norte verdadero"
+            ],
+            "type": "multiple",
+            "options": [
+              "Estrella",
+              "Brújula",
+              "Mapa",
+              "Linterna"
+            ]
+          },
+          "media": {
+            "type": "call",
+            "label": "Llamada estelar"
+          }
+        }
+      ]
+    },
+    {
+      "id": "medayork2",
+      "title": "De nuevo Medayork",
+      "emoji": "🏙️",
+      "hiddenName": true,
+      "revealNameAtPercent": 30,
+      "challenges": [
+        {
+          "id": "medayork2_r1",
+          "title": "Regreso 1",
+          "riddle": {
+            "riddle": "¿Qué sientes cuando vuelves a un lugar querido?",
+            "answer": "nostalgia",
+            "hints": [
+              "Mezcla de alegría y melancolía",
+              "Recuerdos vívidos",
+              "El corazón se aprieta"
+            ],
+            "type": "multiple",
+            "options": [
+              "Nostalgia",
+              "Indiferencia",
+              "Hastío",
+              "Confusión"
             ]
           },
           "media": {
             "type": "video",
             "src": "/videos/adventures.mp4",
-            "label": "Video"
+            "label": "Video del regreso"
           }
         },
         {
-          "id": "bogota_r2",
-          "title": "Capital 2",
+          "id": "medayork2_r2",
+          "title": "Regreso 2",
           "riddle": {
-            "riddle": "¿Qué quiero celebrar contigo siempre?",
-            "answer": "logros",
+            "riddle": "¿Por qué vale la pena volver al mismo lugar?",
+            "answer": "recuerdos",
             "hints": [
-              "Metas cumplidas",
-              "Alegría",
-              "Orgullo bonito"
+              "Se guardan en el corazón",
+              "Nunca se borran",
+              "Hacen sonreír"
             ],
             "type": "multiple",
             "options": [
-              "Logros",
-              "Fracasos",
-              "Rencores",
-              "Excusas"
+              "Recuerdos",
+              "Aburrimiento",
+              "Obligación",
+              "Costumbre"
             ]
           },
           "media": {
             "type": "image",
-            "src": "/images/bogota-1.jpg",
-            "label": "Imagen"
+            "src": "/images/medayork-1.jpg",
+            "label": "Foto del regreso"
           }
         },
         {
-          "id": "bogota_r3",
+          "id": "medayork2_r3",
           "title": "Conexión",
           "riddle": {
-            "riddle": "¿Qué quiero escucharte decir más?",
-            "answer": "te amo",
+            "riddle": "¿Qué hacemos mejor juntos?",
+            "answer": "vivir",
             "hints": [
-              "Dos palabras",
-              "Muy especiales",
-              "Nacen del corazón"
+              "Cada momento cuenta",
+              "No es solo existir",
+              "Es sentir de verdad"
             ],
             "type": "multiple",
             "options": [
-              "Te amo",
-              "No sé",
-              "Tal vez",
-              "Después"
+              "Vivir",
+              "Escapar",
+              "Fingir",
+              "Aguantar"
             ]
           },
           "media": {
@@ -359,175 +359,92 @@
       ]
     },
     {
-      "id": "carepa",
-      "title": "Carepa",
-      "emoji": "🌴",
+      "id": "lejano",
+      "title": "Un lugar muy lejano",
+      "emoji": "🌌",
       "hiddenName": true,
       "revealNameAtPercent": 30,
       "challenges": [
         {
-          "id": "carepa_r1",
-          "title": "Destino 1",
+          "id": "lejano_r1",
+          "title": "Lejano 1",
           "riddle": {
-            "riddle": "¿Qué quiero darte todos los días?",
-            "answer": "cuidado",
+            "riddle": "¿Qué nos mantiene unidos incluso a distancia?",
+            "answer": "amor",
             "hints": [
-              "Protección",
-              "Atención",
-              "Amor en acciones"
+              "No se ve",
+              "Se siente",
+              "Nos conecta"
             ],
             "type": "multiple",
             "options": [
-              "Cuidado",
-              "Descuido",
+              "Amor",
+              "Miedo",
               "Olvido",
-              "Distancia"
+              "Duda"
             ]
           },
           "media": {
             "type": "video",
             "src": "/videos/future.mp4",
-            "label": "Video"
+            "label": "Video lejano"
           }
         },
         {
-          "id": "carepa_r2",
-          "title": "Destino 2",
+          "id": "lejano_r2",
+          "title": "Lejano 2",
           "riddle": {
-            "riddle": "¿Qué no debería faltarnos jamás?",
-            "answer": "respeto",
+            "riddle": "¿Qué queremos cruzar juntos?",
+            "answer": "fronteras",
             "hints": [
-              "Base",
-              "Límites sanos",
-              "Valorarnos"
+              "No son paredes",
+              "Separan países",
+              "Se pueden cruzar"
             ],
             "type": "multiple",
             "options": [
-              "Respeto",
-              "Orgullo",
-              "Desorden",
-              "Frialdad"
-            ]
-          },
-          "media": {
-            "type": "image",
-            "src": "/images/carepa-1.jpg",
-            "label": "Imagen"
-          }
-        },
-        {
-          "id": "carepa_r3",
-          "title": "Conexión",
-          "riddle": {
-            "riddle": "¿Qué quiero que siempre ganemos juntos?",
-            "answer": "tiempo",
-            "hints": [
-              "No vuelve",
-              "Es valioso",
-              "Hay que aprovecharlo"
-            ],
-            "type": "multiple",
-            "options": [
-              "Tiempo",
-              "Prisa",
-              "Distancia",
-              "Ruido"
-            ]
-          },
-          "media": {
-            "type": "call",
-            "label": "Llamada"
-          }
-        }
-      ]
-    },
-    {
-      "id": "inglaterra",
-      "title": "Inglaterra",
-      "emoji": "🇬🇧",
-      "hiddenName": false,
-      "revealNameAtPercent": 30,
-      "challenges": [
-        {
-          "id": "inglaterra_r1",
-          "title": "Final 1",
-          "riddle": {
-            "riddle": "¿Qué sueño quiero cumplir contigo?",
-            "answer": "viajar",
-            "hints": [
-              "Maletas",
-              "Nuevos lugares",
-              "Juntos"
-            ],
-            "type": "multiple",
-            "options": [
-              "Viajar",
-              "Esperar",
-              "Aplazar",
-              "Dudar"
+              "Fronteras",
+              "Excusas",
+              "Temores",
+              "Límites"
             ]
           },
           "media": {
             "type": "video",
-            "src": "/videos/love-story.mp4",
-            "label": "Video"
+            "src": "/videos/adventures.mp4",
+            "label": "Video lejano"
           }
         },
         {
-          "id": "inglaterra_r2",
-          "title": "Final 2",
+          "id": "lejano_r3",
+          "title": "Lejano 3",
           "riddle": {
-            "riddle": "¿Qué somos cuando estamos juntos?",
-            "answer": "equipo",
+            "riddle": "¿Qué sueño compartimos para el futuro?",
+            "answer": "encontrarnos",
             "hints": [
-              "Dos personas",
-              "Mismo objetivo",
-              "Nos apoyamos"
+              "Volver a vernos",
+              "Cara a cara",
+              "Pronto"
             ],
             "type": "multiple",
             "options": [
-              "Equipo",
-              "Rivales",
-              "Extraños",
-              "Duda"
-            ]
-          },
-          "media": {
-            "type": "image",
-            "src": "/images/inglaterra-1.jpg",
-            "label": "Imagen"
-          }
-        },
-        {
-          "id": "inglaterra_r3",
-          "title": "Final 3",
-          "riddle": {
-            "riddle": "¿Qué capítulo quiero escribir contigo?",
-            "answer": "para siempre",
-            "hints": [
-              "Largo",
-              "Bonito",
-              "Sin final cercano"
-            ],
-            "type": "multiple",
-            "options": [
-              "Para siempre",
-              "Temporal",
-              "A medias",
-              "Sin rumbo"
+              "Encontrarnos",
+              "Esperar",
+              "Callar",
+              "Dudar"
             ]
           },
           "media": {
             "type": "call",
-            "label": "Llamada final"
+            "label": "Llamada lejana"
           }
         }
       ]
     }
   ],
   "final": {
-    "title": "El último regalo",
-    "emoji": "🎁",
+    "title": "Inglaterra",
+    "emoji": "🇬🇧",
     "callEndpoint": "/incoming-call",
     "finalMessage": "Este fue solo el comienzo de lo que quiero vivir contigo ❤️",
     "finalSubMessage": "Gracias por existir y por ser parte de mi vida."
