@@ -51,6 +51,21 @@ jobs:
           username: ${{ env.VPS_USER }}
           password: ${{ env.VPS_PASS }}
           script: |
+            # Instalar Docker si no está
+            if ! command -v docker &> /dev/null; then
+              curl -fsSL https://get.docker.com | sh
+            fi
+            # Crear carpeta y .env si no existen
+            mkdir -p /root/bth/uploads
+            if [ ! -f /root/bth/.env ]; then
+              cat > /root/bth/.env << 'ENVEOF'
+            LIVEKIT_API_KEY=REEMPLAZA
+            LIVEKIT_API_SECRET=REEMPLAZA
+            LIVEKIT_URL=wss://REEMPLAZA.livekit.cloud
+            NEXT_PUBLIC_LIVEKIT_URL=wss://REEMPLAZA.livekit.cloud
+            ENVEOF
+            fi
+            # Login y deploy
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ env.GITHUB_ACTOR_NAME }} --password-stdin
             docker pull ghcr.io/${{ env.IMAGE_NAME }}:latest
             docker stop bth || true

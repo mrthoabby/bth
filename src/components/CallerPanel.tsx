@@ -7,9 +7,10 @@ import {
   useTracks,
   VideoTrack,
   useParticipants,
+  RoomAudioRenderer,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { Track, RoomEvent } from 'livekit-client';
+import { Track, RoomEvent, RemoteAudioTrack } from 'livekit-client';
 
 interface ChatMsg { id: string; sender: string; text: string; time: string; }
 
@@ -329,18 +330,34 @@ function AdminInner() {
     setCamOn(next);
   }, [camOn, room]);
 
-  // Mute/unmute birthday girl's audio LOCALLY (only the caller is affected)
-  const toggleHearBirthday = useCallback(() => {
-    const next = !hearBirthday;
+  // Apply birthday girl volume whenever hearBirthday state or her tracks change
+  useEffect(() => {
     const birthdayP = participants.find((p) => p.identity.startsWith('birthday'));
-    if (birthdayP) {
-      birthdayP.audioTrackPublications.forEach((pub) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (pub.track as any)?.setVolume?.(next ? 1 : 0);
-      });
-    }
-    setHearBirthday(next);
+    if (!birthdayP) return;
+    birthdayP.audioTrackPublications.forEach((pub) => {
+      (pub.track as RemoteAudioTrack | undefined)?.setVolume(hearBirthday ? 1 : 0);
+    });
   }, [hearBirthday, participants]);
+
+  const toggleHearBirthday = useCallback(() => { setHearBirthday((v) => !v); }, []);
+
+  // Per-spectator mute (local only)
+  const [mutedSpectators, setMutedSpectators] = useState<Set<string>>(new Set());
+  const toggleMuteSpectator = useCallback((identity: string) => {
+    setMutedSpectators((prev) => {
+      const next = new Set(prev);
+      next.has(identity) ? next.delete(identity) : next.add(identity);
+      return next;
+    });
+  }, []);
+  useEffect(() => {
+    spectators.forEach((p) => {
+      const muted = mutedSpectators.has(p.identity);
+      p.audioTrackPublications.forEach((pub) => {
+        (pub.track as RemoteAudioTrack | undefined)?.setVolume(muted ? 0 : 1);
+      });
+    });
+  }, [mutedSpectators, spectators]);
 
   const [txPaused, setTxPaused] = useState(false);
   const toggleTx = useCallback(() => {
@@ -503,7 +520,10 @@ function AdminInner() {
                     )}
                     <div style={{ padding: '5px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3dc878', boxShadow: '0 0 5px #3dc878', flexShrink: 0 }} />
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{name}</span>
+                      <button onClick={() => toggleMuteSpectator(p.identity)} title={mutedSpectators.has(p.identity) ? 'Activar audio' : 'Silenciar'} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: 0.65, padding: '0 2px', flexShrink: 0 }}>
+                        {mutedSpectators.has(p.identity) ? '🔇' : '🔊'}
+                      </button>
                     </div>
                   </div>
                 );

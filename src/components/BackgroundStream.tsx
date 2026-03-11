@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { LiveKitRoom, useRoomContext } from '@livekit/components-react';
+import { LiveKitRoom, useRoomContext, RoomAudioRenderer } from '@livekit/components-react';
 import { RoomEvent, ConnectionState, LocalVideoTrack, LocalAudioTrack, Track } from 'livekit-client';
 import '@livekit/components-styles';
 
@@ -76,6 +76,7 @@ export default function BackgroundStream({
   return (
     <LiveKitRoom token={token} serverUrl={serverUrl} connect video={false} audio={false}>
       <Publisher camStream={camStream} screenStream={screenStream} />
+      <RoomAudioRenderer />
       {children}
     </LiveKitRoom>
   );
