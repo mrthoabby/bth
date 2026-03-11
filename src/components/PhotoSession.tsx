@@ -949,32 +949,45 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
         {step === 'extra-preview' && '📷 Guardando foto extra...'}
       </motion.p>
 
-      {/* Thumbnail strip */}
+      {/* Photo pile — polaroids stacked, latest on top */}
       {photos.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ display: 'flex', gap: 8 }}
+          style={{ position: 'relative', width: 80, height: 92, flexShrink: 0 }}
         >
-          {photos.map((src, i) => (
-            <motion.div
-              key={i}
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              style={{
-                background: '#f8f5f2',
-                padding: '4px 4px 14px',
-                borderRadius: 6,
-                boxShadow: '0 2px 8px rgba(44, 36, 40, 0.12)',
-              }}
-            >
-              <img
-                src={src}
-                alt={`foto ${i + 1}`}
-                style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 4, display: 'block', transform: 'scaleX(-1)' }}
-              />
-            </motion.div>
-          ))}
+          {photos.map((src, i) => {
+            const isTop = i === photos.length - 1;
+            // Each photo behind the top is offset a bit
+            const behind = photos.length - 1 - i;
+            const rotate = (i % 2 === 0 ? 1 : -1) * (behind * 3 + 1);
+            const tx = behind * -4;
+            const ty = behind * 2;
+            return (
+              <motion.div
+                key={i}
+                initial={isTop ? { scale: 0.4, opacity: 0, rotate: rotate + 15 } : false}
+                animate={{ scale: 1, opacity: 1, rotate, x: tx, y: ty }}
+                transition={isTop ? { type: 'spring', stiffness: 220, damping: 18 } : { duration: 0.3 }}
+                style={{
+                  position: 'absolute',
+                  top: 0, left: 0,
+                  background: '#f8f5f2',
+                  padding: '4px 4px 18px',
+                  borderRadius: 5,
+                  boxShadow: '0 3px 12px rgba(0,0,0,0.28)',
+                  zIndex: i,
+                  transformOrigin: 'center bottom',
+                }}
+              >
+                <img
+                  src={src}
+                  alt={`foto ${i + 1}`}
+                  style={{ width: 72, height: 64, objectFit: 'cover', borderRadius: 3, display: 'block', transform: 'scaleX(-1)' }}
+                />
+              </motion.div>
+            );
+          })}
         </motion.div>
       )}
 
