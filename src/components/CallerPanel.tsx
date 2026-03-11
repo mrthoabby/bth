@@ -335,7 +335,8 @@ function AdminInner() {
     const birthdayP = participants.find((p) => p.identity.startsWith('birthday'));
     if (birthdayP) {
       birthdayP.audioTrackPublications.forEach((pub) => {
-        pub.track?.setVolume(next ? 1 : 0);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (pub.track as any)?.setVolume?.(next ? 1 : 0);
       });
     }
     setHearBirthday(next);
