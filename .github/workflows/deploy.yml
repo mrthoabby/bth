@@ -9,7 +9,7 @@ env:
   REGISTRY: ghcr.io
   GITHUB_ACTOR_NAME: mrthoabby
   IMAGE_NAME: mrthoabby/bth
-  VPS_HOST: "45.79.123.45"            # ← IP de tu VPS
+  VPS_HOST: "34.72.1.126"            # ← IP de tu VPS
   VPS_USER: root                      # ← usuario SSH del VPS
   VPS_PASS: "elige_un_password_aqui1"     # ← contraseña SSH del VPS
 
