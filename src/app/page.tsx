@@ -327,8 +327,8 @@ export default function Home() {
               transition={{ duration: 0.12 }}
               onClick={(e) => e.stopPropagation()}
               style={{
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
+                background: 'rgba(22, 6, 14, 0.97)',
+                border: '1px solid rgba(158, 86, 100, 0.35)',
                 borderRadius: 20,
                 width: '100%',
                 maxWidth: 480,
@@ -344,23 +344,23 @@ export default function Home() {
                 <span style={{ fontSize: 22 }}>
                   {overlay === 'paris-modal' ? '🔓' : overlay === 'roulette' ? '🎰' : '💝'}
                 </span>
-                <h3 className="serif" style={{ flex: 1, fontSize: 17, color: 'var(--text)', margin: 0 }}>
+                <h3 className="serif" style={{ flex: 1, fontSize: 17, color: '#f8e8ec', margin: 0 }}>
                   {overlay === 'paris-modal' ? 'Secretos Desbloqueados' : overlay === 'roulette' ? 'Premio Especial' : 'Feliz Cumpleaños'}
                 </h3>
-                <button onClick={() => setOverlay('none')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 18, padding: '2px 6px' }}>✕</button>
+                <button onClick={() => setOverlay('none')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,200,210,0.45)', fontSize: 18, padding: '2px 6px' }}>✕</button>
               </div>
 
               {/* Body */}
               {overlay === 'paris-modal' && (
                 <div style={{ padding: '28px 28px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, textAlign: 'center' }}>
                   <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                    style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.7, margin: 0 }}>
+                    style={{ fontSize: 14, color: 'rgba(240,210,220,0.88)', lineHeight: 1.7, margin: 0 }}>
                     Lo lograste. Cada enigma, cada isla, cada historia.
                   </motion.p>
                   <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
                     style={{ width: '100%', padding: '14px 0', borderTop: '1px solid rgba(215,95,115,0.2)', borderBottom: '1px solid rgba(215,95,115,0.2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {['Todos los mensajes', 'Todas las islas', 'Todos los enigmas'].map((item) => (
-                      <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--text)' }}>
+                      <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'rgba(240,210,220,0.82)' }}>
                         <span style={{ color: '#4ecb71', fontSize: 16 }}>✓</span> {item}
                       </div>
                     ))}
@@ -375,7 +375,7 @@ export default function Home() {
               )}
 
               {overlay === 'roulette' && (
-                <RouletteScreen onDone={() => setOverlay('final')} />
+                <RouletteScreen onDone={() => setOverlay('surprise-call')} />
               )}
 
               {overlay === 'final' && (
