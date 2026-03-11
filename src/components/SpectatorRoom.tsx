@@ -10,7 +10,7 @@ import {
   RoomAudioRenderer,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { Track, RoomEvent, RemoteAudioTrack } from 'livekit-client';
+import { Track, RoomEvent, RemoteAudioTrack, ConnectionState } from 'livekit-client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ChatMessage {
@@ -169,8 +169,8 @@ function ChatPanel({ myName }: { myName: string }) {
 function VideoGrid({ myName }: { myName: string }) {
   const participants = useParticipants();
 
-  const camTracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
-  const screenTracks = useTracks([Track.Source.ScreenShare], { onlySubscribed: false });
+  const camTracks = useTracks([Track.Source.Camera], { onlySubscribed: true });
+  const screenTracks = useTracks([Track.Source.ScreenShare], { onlySubscribed: true });
 
   // birthday girl's screen or camera shown in main area
   const birthdayScreen = screenTracks.find((t) => t.participant.identity.startsWith('birthday'));
@@ -225,7 +225,7 @@ function VideoGrid({ myName }: { myName: string }) {
         {remoteScreen.length > 0 && birthdayCam && (
           <div style={{
             position: 'absolute', bottom: 12, right: 12,
-            width: 140, height: 100,
+            width: 182, height: 130,
             borderRadius: 10, overflow: 'hidden',
             border: '2px solid rgba(232,69,90,0.7)',
             boxShadow: '0 0 18px rgba(232,69,90,0.35)',
@@ -306,12 +306,16 @@ function RoomInner({ myName }: { myName: string }) {
   const participants = useParticipants();
   const [birthdayMuted, setBirthdayMuted] = useState(false);
 
+  // On connect: camera ON, mic ALWAYS OFF — guaranteed, no race
   useEffect(() => {
-    // Camera on, mic OFF — spectators watch silently (chat only)
-    room.localParticipant.setCameraEnabled(true).catch(() => {});
-    room.localParticipant.setMicrophoneEnabled(false).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const apply = () => {
+      room.localParticipant.setCameraEnabled(true).catch(() => {});
+      room.localParticipant.setMicrophoneEnabled(false).catch(() => {});
+    };
+    room.on(RoomEvent.Connected, apply);
+    if (room.state === ConnectionState.Connected) apply();
+    return () => { room.off(RoomEvent.Connected, apply); };
+  }, [room]);
 
   // Listen for commands from the caller
   useEffect(() => {
@@ -322,6 +326,8 @@ function RoomInner({ myName }: { myName: string }) {
         if (msg.type === 'birthday-mute') {
           const forMe = msg.target === 'all' || msg.target === room.localParticipant.identity;
           if (forMe) setBirthdayMuted(!!msg.muted);
+        } else if (msg.type === 'enable-mic') {
+          room.localParticipant.setMicrophoneEnabled(!!msg.enabled).catch(() => {});
         }
       } catch { /* ignore */ }
     };
@@ -415,8 +421,8 @@ export default function SpectatorRoom() {
   const handleJoin = useCallback(async (name: string) => {
     try {
       const res = await fetch(`/api/livekit-token?role=spectator&name=${encodeURIComponent(name)}`);
-      if (!res.ok) throw new Error('No se pudo obtener el token');
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo obtener el token');
       setToken(data.token);
       setServerUrl(data.url);
       setMyName(name);
@@ -442,8 +448,6 @@ export default function SpectatorRoom() {
       token={token}
       serverUrl={serverUrl}
       connect={true}
-      video={true}
-      audio={false}
     >
       <RoomInner myName={myName} />
     </LiveKitRoom>

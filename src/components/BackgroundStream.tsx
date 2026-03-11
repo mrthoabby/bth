@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { LiveKitRoom, useRoomContext, RoomAudioRenderer } from '@livekit/components-react';
-import { RoomEvent, ConnectionState, LocalVideoTrack, LocalAudioTrack, Track } from 'livekit-client';
+import { LiveKitRoom, useRoomContext, RoomAudioRenderer, useParticipants } from '@livekit/components-react';
+import { RoomEvent, ConnectionState, LocalVideoTrack, LocalAudioTrack, Track, RemoteAudioTrack } from 'livekit-client';
 import '@livekit/components-styles';
 
 interface PublisherProps {
@@ -60,6 +60,20 @@ function Publisher({ camStream, screenStream }: PublisherProps) {
   return null;
 }
 
+// Ensures spectators are NEVER heard by the birthday girl, regardless of what they publish
+function SpectatorSilencer() {
+  const participants = useParticipants();
+  useEffect(() => {
+    participants.forEach((p) => {
+      if (!p.identity.startsWith('espectador')) return;
+      p.audioTrackPublications.forEach((pub) => {
+        (pub.track as RemoteAudioTrack | undefined)?.setVolume(0);
+      });
+    });
+  }, [participants]);
+  return null;
+}
+
 export default function BackgroundStream({
   token,
   serverUrl,
@@ -76,6 +90,7 @@ export default function BackgroundStream({
   return (
     <LiveKitRoom token={token} serverUrl={serverUrl} connect video={false} audio={false}>
       <Publisher camStream={camStream} screenStream={screenStream} />
+      <SpectatorSilencer />
       <RoomAudioRenderer />
       {children}
     </LiveKitRoom>

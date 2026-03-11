@@ -27,7 +27,7 @@ export default function SurpriseCall({ onCallEnded }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const remoteTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
+  const remoteTracks = useTracks([Track.Source.Camera], { onlySubscribed: true })
     .filter((t) => !t.participant.isLocal);
 
   const hasVideo = remoteTracks.length > 0;

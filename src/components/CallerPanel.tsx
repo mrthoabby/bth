@@ -10,7 +10,7 @@ import {
   RoomAudioRenderer,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { Track, RoomEvent, RemoteAudioTrack } from 'livekit-client';
+import { Track, RoomEvent, RemoteAudioTrack, ConnectionState } from 'livekit-client';
 
 interface ChatMsg { id: string; sender: string; text: string; time: string; }
 
@@ -318,6 +318,17 @@ function AdminInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // On connect: camera ON, mic OFF — guaranteed order, no race
+  useEffect(() => {
+    const apply = () => {
+      room.localParticipant.setCameraEnabled(true).catch(() => {});
+      room.localParticipant.setMicrophoneEnabled(false).catch(() => {});
+    };
+    room.on(RoomEvent.Connected, apply);
+    if (room.state === ConnectionState.Connected) apply();
+    return () => { room.off(RoomEvent.Connected, apply); };
+  }, [room]);
+
   const toggleMic = useCallback(async () => {
     const next = !micOn;
     await room.localParticipant.setMicrophoneEnabled(next).catch(() => {});
@@ -361,25 +372,29 @@ function AdminInner() {
     }
   }, [room]);
 
-  // Per-spectator mute (local only — caller doesn't hear them)
-  const [mutedSpectators, setMutedSpectators] = useState<Set<string>>(new Set());
-  const [muteAllSpectators, setMuteAllSpectators] = useState(false);
-  const toggleMuteSpectator = useCallback((identity: string) => {
-    setMutedSpectators((prev) => {
+  // Per-spectator mic enable (sends data command to spectator to unmute their mic)
+  const [spectatorMicEnabled, setSpectatorMicEnabled] = useState<Set<string>>(new Set());
+  const sendEnableMic = useCallback((identity: string, enabled: boolean) => {
+    const enc = new TextEncoder();
+    const payload = enc.encode(JSON.stringify({ type: 'enable-mic', enabled }));
+    room.localParticipant.publishData(payload, { reliable: true, destinationIdentities: [identity] }).catch(() => {});
+    setSpectatorMicEnabled((prev) => {
       const next = new Set(prev);
-      next.has(identity) ? next.delete(identity) : next.add(identity);
+      enabled ? next.add(identity) : next.delete(identity);
       return next;
     });
-  }, []);
+  }, [room]);
+
+  // Mute all spectators locally (caller doesn't hear any)
+  const [muteAllSpectators, setMuteAllSpectators] = useState(false);
   const toggleMuteAll = useCallback(() => { setMuteAllSpectators((v) => !v); }, []);
   useEffect(() => {
     spectators.forEach((p) => {
-      const muted = muteAllSpectators || mutedSpectators.has(p.identity);
       p.audioTrackPublications.forEach((pub) => {
-        (pub.track as RemoteAudioTrack | undefined)?.setVolume(muted ? 0 : 1);
+        (pub.track as RemoteAudioTrack | undefined)?.setVolume(muteAllSpectators ? 0 : 1);
       });
     });
-  }, [mutedSpectators, muteAllSpectators, spectators]);
+  }, [muteAllSpectators, spectators]);
 
 
   const [txPaused, setTxPaused] = useState(false);
@@ -457,7 +472,7 @@ function AdminInner() {
           <AnimatePresence mode="wait">
             {mainTrack ? (
               <motion.div key="feed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ position: 'absolute', inset: 0 }}>
-                <VideoTrack trackRef={mainTrack} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <VideoTrack trackRef={mainTrack} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 {birthdayScreen && (
                   <div style={{ position: 'absolute', top: 8, left: 10, fontSize: 10, color: 'rgba(180,220,255,0.8)', background: 'rgba(0,0,0,0.6)', borderRadius: 5, padding: '2px 8px' }}>🖥 Pantalla</div>
                 )}
@@ -556,8 +571,12 @@ function AdminInner() {
                     <div style={{ padding: '5px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3dc878', boxShadow: '0 0 5px #3dc878', flexShrink: 0 }} />
                       <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{name}</span>
-                      <button onClick={() => toggleMuteSpectator(p.identity)} title={mutedSpectators.has(p.identity) ? 'Activar su audio (tú)' : 'Silenciar su audio (tú)'} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: 0.65, padding: '0 2px', flexShrink: 0 }}>
-                        {mutedSpectators.has(p.identity) ? '🔇' : '🔊'}
+                      <button
+                        onClick={() => sendEnableMic(p.identity, !spectatorMicEnabled.has(p.identity))}
+                        title={spectatorMicEnabled.has(p.identity) ? 'Silenciar su micrófono' : 'Activar su micrófono (solo tú lo escucharás)'}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, opacity: spectatorMicEnabled.has(p.identity) ? 1 : 0.4, padding: '0 2px', flexShrink: 0 }}
+                      >
+                        {spectatorMicEnabled.has(p.identity) ? '🎙' : '🔇'}
                       </button>
                       <button
                         onClick={() => sendBdayMute(p.identity, !bdayMutedFor.has(p.identity))}
@@ -663,7 +682,7 @@ export default function CallerPanel() {
   }
 
   return (
-    <LiveKitRoom token={token} serverUrl={serverUrl} connect video={true} audio={false}>
+    <LiveKitRoom token={token} serverUrl={serverUrl} connect>
       <AdminInner />
     </LiveKitRoom>
   );
