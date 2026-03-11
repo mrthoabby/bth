@@ -6,7 +6,7 @@ import RiddleScreen from './RiddleScreen';
 import VideoPlayer from './VideoPlayer';
 
 // ─── ViewBox constants ────────────────────────────────────────────────────────
-const VBX = -60, VBY = -50, VBW = 1020, VBH = 660;
+const VBX = -50, VBY = -50, VBW = 1080, VBH = 690;
 
 // ─── Terrain components ───────────────────────────────────────────────────────
 function Pine({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
@@ -345,9 +345,9 @@ function Island({ def, completed }: { def: IslandDef; completed: boolean }) {
 
 // ─── Challenge media component ────────────────────────────────────────────────
 function ChallengeMedia({
-  challenge, viewed, onViewed,
+  challenge, viewed, onViewed, autoPlay = true,
 }: {
-  challenge: StopChallengeConfig; viewed: boolean; onViewed: () => void;
+  challenge: StopChallengeConfig; viewed: boolean; onViewed: () => void; autoPlay?: boolean;
 }) {
   if (challenge.media.type === 'video' && challenge.media.src) {
     return (
@@ -357,6 +357,7 @@ function ChallengeMedia({
           title={challenge.media.label ?? challenge.title}
           onFinished={onViewed}
           compact
+          autoPlay={autoPlay}
         />
       </div>
     );
@@ -405,6 +406,7 @@ function NodeModal({
   onChallengeSolved,
   onMediaViewed,
   onClose,
+  onBadgeEarned,
 }: {
   stop: StopConfig;
   solvedChallengeIds: Set<string>;
@@ -412,6 +414,7 @@ function NodeModal({
   onChallengeSolved: (id: string) => void;
   onMediaViewed: (id: string) => void;
   onClose: () => void;
+  onBadgeEarned: (challengeId: string, label: string) => void;
 }) {
   const firstUnsolved = stop.challenges.find((c) => !solvedChallengeIds.has(c.id));
   const [activeChallengeId, setActiveChallengeId] = useState<string>(
@@ -422,123 +425,309 @@ function NodeModal({
   const solved = solvedChallengeIds.has(activeChallenge.id);
   const viewed = viewedMediaIds.has(activeChallenge.id);
   const displayName = stopDisplayName(stop, solvedChallengeIds);
+  const islandIconSrc = ISLAND_DEFS.find((d) => d.stopId === stop.id)?.iconSrc;
+  const hasMultiple = stop.challenges.length > 1;
+
+  // Challenge N is accessible only if all previous challenges are solved
+  const isAccessible = (idx: number) => {
+    if (idx === 0) return true;
+    return stop.challenges.slice(0, idx).every((c) => solvedChallengeIds.has(c.id));
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.1 }}
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(10, 8, 20, 0.75)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(10, 8, 20, 0.72)',
+        backdropFilter: 'blur(6px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 16,
       }}
     >
       <motion.div
-        initial={{ scale: 0.9, y: 20 }}
+        initial={{ scale: 0.96, y: 8 }}
         animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-        transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+        exit={{ scale: 0.96, opacity: 0 }}
+        transition={{ duration: 0.12 }}
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--border)',
           borderRadius: 20,
           width: '100%',
-          maxWidth: 480,
-          maxHeight: '88vh',
+          maxWidth: 1100,
+          maxHeight: '90vh',
           overflowY: 'auto',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.55)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {/* Header */}
-        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 26 }}>{stop.emoji}</span>
+        <div style={{
+          padding: '14px 18px 12px',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', gap: 10,
+          flexShrink: 0,
+        }}>
+          {islandIconSrc && (
+            <img src={islandIconSrc} alt="" style={{ width: 40, height: 40, objectFit: 'contain', flexShrink: 0 }} />
+          )}
+          <span style={{ fontSize: 24 }}>{stop.emoji}</span>
           <div style={{ flex: 1 }}>
-            <h3 className="serif" style={{ fontSize: 20, color: 'var(--text)', margin: 0 }}>
+            <h3 className="serif" style={{ fontSize: 18, color: 'var(--text)', margin: 0 }}>
               {displayName}
             </h3>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-              {stop.challenges.filter((c) => solvedChallengeIds.has(c.id)).length}/{stop.challenges.length} acertijos
-            </p>
           </div>
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 20, padding: 4 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 18, padding: '2px 6px' }}
           >
             ✕
           </button>
         </div>
 
-        {/* Challenge tabs */}
-        {stop.challenges.length > 1 && (
-          <div style={{ padding: '10px 20px', display: 'flex', gap: 6, flexWrap: 'wrap', borderBottom: '1px solid var(--border)' }}>
-            {stop.challenges.map((c, idx) => {
-              const isSolved = solvedChallengeIds.has(c.id);
-              const isViewed = viewedMediaIds.has(c.id);
-              const isActive = c.id === activeChallengeId;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => setActiveChallengeId(c.id)}
-                  style={{
-                    borderRadius: 999,
-                    border: isActive ? '1.5px solid var(--rose)' : '1px solid var(--border)',
-                    background: isActive ? 'rgba(158, 86, 100, 0.12)' : 'transparent',
-                    padding: '5px 12px',
-                    fontSize: 12,
-                    color: isActive ? 'var(--rose)' : 'var(--text-muted)',
-                    cursor: 'pointer',
-                    fontWeight: isActive ? 600 : 400,
-                  }}
-                >
-                  #{idx + 1} {isSolved ? (isViewed ? '✓' : '🔓') : '🔒'}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {/* Body: path sidebar + challenge content */}
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
 
-        {/* Challenge content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeChallenge.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            style={{ padding: '0 20px 20px' }}
-          >
-            {!solved ? (
-              <div style={{ paddingTop: 4 }}>
+          {/* ── Duolingo-style vertical path (only when multiple challenges) ── */}
+          {hasMultiple && (
+            <div style={{
+              width: 100,
+              flexShrink: 0,
+              borderRight: '1px solid var(--border)',
+              padding: '20px 8px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 0,
+            }}>
+              {stop.challenges.map((c, idx) => {
+                const isSolved = solvedChallengeIds.has(c.id);
+                const accessible = isAccessible(idx);
+                const isActive = c.id === activeChallengeId;
+                return (
+                  <div key={c.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                    {/* Connector line above (except first) */}
+                    {idx > 0 && (
+                      <div style={{
+                        width: 3,
+                        height: 20,
+                        background: solvedChallengeIds.has(stop.challenges[idx - 1].id)
+                          ? 'linear-gradient(to bottom, rgba(215,95,115,0.7), rgba(158,86,100,0.4))'
+                          : 'rgba(255,255,255,0.1)',
+                        borderRadius: 2,
+                        margin: '0 auto',
+                      }} />
+                    )}
+
+                    {/* Node button */}
+                    <motion.button
+                      whileHover={accessible ? { scale: 1.08 } : {}}
+                      whileTap={accessible ? { scale: 0.94 } : {}}
+                      onClick={() => accessible && setActiveChallengeId(c.id)}
+                      title={accessible ? c.title : 'Resuelve el anterior primero'}
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: '50%',
+                        border: isActive
+                          ? '2.5px solid var(--rose)'
+                          : isSolved
+                          ? '2px solid rgba(215,95,115,0.5)'
+                          : accessible
+                          ? '2px solid rgba(255,255,255,0.2)'
+                          : '2px solid rgba(255,255,255,0.08)',
+                        background: isSolved
+                          ? 'linear-gradient(135deg, rgba(175,55,78,0.85), rgba(135,38,58,0.85))'
+                          : isActive
+                          ? 'rgba(158,86,100,0.2)'
+                          : accessible
+                          ? 'rgba(255,255,255,0.06)'
+                          : 'rgba(0,0,0,0.3)',
+                        cursor: accessible ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: isSolved ? 20 : accessible ? 15 : 18,
+                        color: isSolved ? '#fff' : accessible ? 'var(--text)' : 'rgba(255,255,255,0.25)',
+                        fontWeight: 700,
+                        boxShadow: isActive
+                          ? '0 0 0 3px rgba(215,95,115,0.25)'
+                          : isSolved
+                          ? '0 4px 12px rgba(175,55,78,0.35)'
+                          : 'none',
+                        transition: 'all 0.15s',
+                        outline: 'none',
+                      }}
+                    >
+                      {isSolved ? '✓' : accessible ? `${idx + 1}` : '🔒'}
+                    </motion.button>
+
+                    {/* Label */}
+                    <p style={{
+                      fontSize: 9,
+                      textAlign: 'center',
+                      color: accessible ? (isActive ? 'var(--rose)' : 'var(--text-muted)') : 'rgba(255,255,255,0.15)',
+                      margin: '5px 0 0',
+                      lineHeight: 1.3,
+                      maxWidth: 80,
+                      fontWeight: isActive ? 600 : 400,
+                    }}>
+                      {c.title}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Active challenge content (riddle + media) ── */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeChallenge.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
+              style={{ display: 'flex', flexWrap: 'nowrap', flex: 1, minHeight: 0 }}
+            >
+              {/* Left column — riddle */}
+              <div style={{
+                flex: '0 0 30%',
+                padding: '16px 18px',
+                borderRight: '1px solid var(--border)',
+                minWidth: 0,
+              }}>
                 <RiddleScreen
                   riddle={activeChallenge.riddle}
                   title={activeChallenge.title}
                   compact
                   onSolved={() => onChallengeSolved(activeChallenge.id)}
+                  onFirstTrySolve={() => onBadgeEarned(activeChallenge.id, activeChallenge.title)}
                 />
               </div>
-            ) : (
-              <div style={{ paddingTop: 16 }}>
-                <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--rose)', marginBottom: 4, opacity: 0.7 }}>
-                  {activeChallenge.title}
-                </p>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 2 }}>
-                  🎁 Premio desbloqueado: {activeChallenge.media.label ?? activeChallenge.media.type}
-                </p>
-                <ChallengeMedia
-                  challenge={activeChallenge}
-                  viewed={viewed}
-                  onViewed={() => onMediaViewed(activeChallenge.id)}
-                />
+
+              {/* Right column — media (blurred until solved) */}
+              <div style={{
+                flex: '0 0 70%',
+                padding: '16px 18px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                position: 'relative',
+                minWidth: 0,
+                minHeight: 400,
+              }}>
+                {/* Media content — always rendered, blurred when locked */}
+                <div style={{
+                  filter: solved ? 'blur(0px)' : 'blur(16px)',
+                  transition: 'filter 0.5s ease',
+                  pointerEvents: solved ? 'auto' : 'none',
+                  userSelect: solved ? 'auto' : 'none',
+                }}>
+                  <ChallengeMedia
+                    challenge={activeChallenge}
+                    viewed={viewed}
+                    onViewed={() => onMediaViewed(activeChallenge.id)}
+                    autoPlay={solved}
+                  />
+                </div>
+
+                {/* Lock overlay when not yet solved */}
+                {!solved && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center',
+                    gap: 10,
+                    background: 'rgba(20, 8, 14, 0.55)',
+                    borderRadius: 12,
+                  }}>
+                    <div style={{
+                      background: 'rgba(175, 55, 78, 0.18)',
+                      border: '1.5px solid rgba(215,95,115,0.35)',
+                      borderRadius: 16,
+                      padding: '18px 24px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 8,
+                      backdropFilter: 'blur(4px)',
+                    }}>
+                      <span style={{ fontSize: 38 }}>🔒</span>
+                      <p style={{
+                        fontSize: 13,
+                        color: 'rgba(255, 200, 210, 0.95)',
+                        textAlign: 'center',
+                        margin: 0,
+                        maxWidth: 160,
+                        lineHeight: 1.55,
+                        fontWeight: 500,
+                      }}>
+                        Resuelve el acertijo para descubrir el premio
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+// ─── Badge star component ─────────────────────────────────────────────────────
+function BadgeStar({ label, index }: { label: string; index: number }) {
+  const [hovered, setHovered] = useState(false);
+  const palette = ['#ffd700', '#ff6b6b', '#4ecdc4', '#a78bfa', '#f472b6', '#34d399'];
+  const color = palette[index % palette.length];
+  return (
+    <div style={{ position: 'relative' }}>
+      <motion.div
+        initial={{ scale: 0, rotate: -180, y: 20 }}
+        animate={{ scale: 1, rotate: 0, y: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 18, delay: index * 0.06 }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          width: 30, height: 30, borderRadius: '50%',
+          background: `radial-gradient(circle, ${color}28, ${color}0a)`,
+          border: `1.5px solid ${color}70`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'default',
+          boxShadow: `0 0 10px ${color}50`,
+        }}
+      >
+        <span style={{ fontSize: 15 }}>⭐</span>
+      </motion.div>
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12 }}
+            style={{
+              position: 'absolute', bottom: 38, left: '50%', transform: 'translateX(-50%)',
+              whiteSpace: 'nowrap', background: 'rgba(6,10,20,0.96)',
+              border: `1px solid ${color}50`, borderRadius: 8,
+              padding: '4px 9px', fontSize: 11, color, zIndex: 10,
+              pointerEvents: 'none',
+            }}
+          >
+            ✨ {label}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -550,6 +739,7 @@ interface Props {
   selectedStopId: string | null;
   allCompleted: boolean;
   onSelectStop: (stop: StopConfig) => void;
+  onDeselectStop: () => void;
   onChallengeSolved: (challengeId: string) => void;
   onMediaViewed: (challengeId: string) => void;
   onFinalClick: () => void;
@@ -565,6 +755,7 @@ export default function MapView({
   selectedStopId,
   allCompleted,
   onSelectStop,
+  onDeselectStop,
   onChallengeSolved,
   onMediaViewed,
   onFinalClick,
@@ -573,6 +764,11 @@ export default function MapView({
 }: Props) {
   const modalStop = selectedStopId ? stops.find((s) => s.id === selectedStopId) ?? null : null;
   const [hoverStopId, setHoverStopId] = useState<string | null>(null);
+  const [earnedBadges, setEarnedBadges] = useState<Array<{ id: string; label: string }>>([]);
+
+  const handleBadgeEarned = (id: string, label: string) => {
+    setEarnedBadges((prev) => prev.some((b) => b.id === id) ? prev : [...prev, { id, label }]);
+  };
 
   const islandMap = useMemo(() => {
     const m = new Map<string, IslandDef>();
@@ -688,12 +884,16 @@ export default function MapView({
                 }
                 strokeLinecap="round"
               />
-              {/* Animated dot on unlocked paths */}
-              {seg.unlocked && (
-                <circle r={4} fill={seg.ocean ? 'rgba(100,200,255,0.8)' : 'rgba(255,255,255,0.8)'}>
-                  <animateMotion dur={`${seg.ocean ? 4 : 3}s`} repeatCount="indefinite" path={seg.d} />
-                </circle>
-              )}
+              {/* Animated dot — always visible, brighter when unlocked */}
+              <circle
+                r={seg.unlocked ? 4 : 2.5}
+                fill={seg.ocean
+                  ? (seg.unlocked ? 'rgba(100,200,255,0.85)' : 'rgba(100,200,255,0.3)')
+                  : (seg.unlocked ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.28)')
+                }
+              >
+                <animateMotion dur={`${seg.ocean ? 5 : 3.5}s`} repeatCount="indefinite" path={seg.d} />
+              </circle>
               {seg.ocean && (
                 <text x="808" y="120" textAnchor="middle" fontSize={10} fill="rgba(120,200,255,0.4)"
                   fontStyle="italic" letterSpacing="0.1em">
@@ -715,31 +915,55 @@ export default function MapView({
             const stop = stops.find((s) => s.id === def.stopId);
             const isFinal = def.stopId === 'inglaterra';
             const name = stop ? stopDisplayName(stop, solvedChallengeIds) : (isFinal ? finalTitle : '???');
-            const solved = stop ? stopProgress(stop, solvedChallengeIds).solved : 0;
-            const total = stop ? stopProgress(stop, solvedChallengeIds).total : 0;
+            const { solved, total } = stop ? stopProgress(stop, solvedChallengeIds) : { solved: 0, total: 0 };
+            const remaining = total - solved;
+            const allDone = stop ? stop.challenges.every((c) => solvedChallengeIds.has(c.id)) : false;
+
+            // estimate pill width based on label length
+            const pillW = Math.max(name.length * 7.5, 48) + 22;
+            const pillH = 20;
+            const pillX = def.cx - pillW / 2;
+            const pillY = def.cy + def.labelDy - pillH - 4;
+
             return (
               <g key={`label-${def.stopId}`}>
+                {/* White pill background for title */}
+                <rect
+                  x={pillX} y={pillY}
+                  width={pillW} height={pillH}
+                  rx={10} ry={10}
+                  fill={isFinal && !stop ? 'rgba(212,168,64,0.95)' : 'rgba(255,255,255,0.93)'}
+                  style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))' }}
+                />
                 <text
                   x={def.cx}
-                  y={def.cy + def.labelDy - 6}
+                  y={pillY + pillH - 6}
                   textAnchor="middle"
-                  fontSize={13}
+                  fontSize={11.5}
                   fontWeight={700}
-                  fill={isFinal && !stop ? 'rgba(212,168,64,0.9)' : 'rgba(255,255,255,0.92)'}
-                  style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.9))' }}
+                  fill={isFinal && !stop ? '#3a2000' : '#1a1a2e'}
                 >
                   {name}
                 </text>
+
+                {/* Lock/progress badge */}
                 {stop && (
-                  <text
-                    x={def.cx}
-                    y={def.cy + def.labelDy + 10}
-                    textAnchor="middle"
-                    fontSize={10}
-                    fill="rgba(255,255,255,0.5)"
-                  >
-                    {solved}/{total}
-                  </text>
+                  <g transform={`translate(${def.cx + pillW / 2 + 14}, ${pillY + pillH / 2})`}>
+                    <circle r={11}
+                      fill={allDone ? 'rgba(60,180,80,0.92)' : remaining > 0 ? 'rgba(20,20,40,0.85)' : 'rgba(60,180,80,0.92)'}
+                      stroke={allDone ? 'rgba(100,230,120,0.6)' : 'rgba(255,255,255,0.3)'}
+                      strokeWidth={1.5}
+                    />
+                    <text
+                      x={0} y={4}
+                      textAnchor="middle"
+                      fontSize={allDone ? 11 : 9}
+                      fontWeight={700}
+                      fill="#fff"
+                    >
+                      {allDone ? '✓' : `🔒${remaining}`}
+                    </text>
+                  </g>
                 )}
               </g>
             );
@@ -749,47 +973,68 @@ export default function MapView({
         {/* ── HTML button overlays ── */}
         {ISLAND_DEFS.map((def) => {
           const stop = stops.find((s) => s.id === def.stopId);
-          const isFinalIsland = def.stopId === 'inglaterra';
-          const btnSize = 68;
+          const iconSize = 170;  // icon overflows beyond ring
+          const ringSize = 80;   // circle ring / click-area diameter
 
           // Final island (no stop entry) — special locked/unlocked button
           if (!stop) {
             return (
               <div
                 key={def.stopId}
-                style={{
-                  position: 'absolute',
-                  left: `calc(${px(def.cx, VBX, VBW)} - ${btnSize / 2}px)`,
-                  top: `calc(${px(def.cy, VBY, VBH)} - ${btnSize / 2}px)`,
-                }}
+                role="button"
+                tabIndex={0}
+                onClick={allCompleted ? onFinalClick : undefined}
                 onMouseEnter={() => setHoverStopId(def.stopId)}
                 onMouseLeave={() => setHoverStopId(null)}
+                style={{
+                  position: 'absolute',
+                  left: `calc(${px(def.cx, VBX, VBW)} - ${iconSize / 2}px)`,
+                  top: `calc(${px(def.cy, VBY, VBH)} - ${iconSize / 2 + 40}px)`,
+                  width: iconSize, height: iconSize + 40,
+                  cursor: allCompleted ? 'pointer' : 'default',
+                  display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                  paddingBottom: 20,
+                }}
               >
-                <button
-                  onClick={allCompleted ? onFinalClick : undefined}
+                {/* Ring circle behind icon — centered on icon */}
+                <svg
                   style={{
-                    width: btnSize, height: btnSize,
-                    borderRadius: '50%',
-                    border: allCompleted ? '2.5px solid rgba(212,168,64,0.9)' : '2px solid rgba(255,255,255,0.25)',
-                    background: allCompleted ? 'rgba(212,168,64,0.15)' : 'rgba(8,14,24,0.55)',
-                    cursor: allCompleted ? 'pointer' : 'default',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    backdropFilter: 'blur(6px)',
-                    boxShadow: allCompleted ? '0 0 28px rgba(212,168,64,0.55)' : '0 3px 12px rgba(0,0,0,0.5)',
-                    transition: 'all 0.3s',
-                    outline: 'none', position: 'relative',
-                    filter: allCompleted ? 'none' : 'grayscale(0.4) opacity(0.7)',
+                    position: 'absolute',
+                    top: iconSize + 40 - 20 - iconSize / 2 - ringSize / 2,
+                    left: (iconSize - ringSize) / 2,
+                    pointerEvents: 'none', zIndex: 1,
                   }}
+                  width={ringSize} height={ringSize}
+                  viewBox={`0 0 ${ringSize} ${ringSize}`}
                 >
-                  {def.iconSrc
-                    ? <img src={def.iconSrc} style={{ width: 48, height: 48, objectFit: 'contain', pointerEvents: 'none' }} />
-                    : <span style={{ fontSize: 28 }}>{finalEmoji}</span>
-                  }
-                  {/* Progress ring */}
-                  <svg style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} viewBox={`0 0 ${btnSize} ${btnSize}`} width={btnSize} height={btnSize}>
-                    <circle cx={btnSize/2} cy={btnSize/2} r={btnSize/2-3} fill="none" stroke={allCompleted ? 'rgba(212,168,64,0.5)' : 'rgba(255,255,255,0.1)'} strokeWidth={3} />
-                  </svg>
-                </button>
+                  <circle cx={ringSize/2} cy={ringSize/2} r={ringSize/2-2}
+                    fill={allCompleted ? 'rgba(212,168,64,0.15)' : 'rgba(8,14,24,0.55)'}
+                    stroke={allCompleted ? 'rgba(212,168,64,0.9)' : 'rgba(255,255,255,0.25)'}
+                    strokeWidth={allCompleted ? 2.5 : 2}
+                  />
+                </svg>
+                {/* Glow halo */}
+                {allCompleted && (
+                  <div style={{
+                    position: 'absolute',
+                    top: iconSize + 40 - 20 - iconSize / 2 - ringSize / 2,
+                    left: (iconSize - ringSize) / 2,
+                    width: ringSize, height: ringSize, borderRadius: '50%',
+                    boxShadow: '0 0 28px rgba(212,168,64,0.55)', pointerEvents: 'none', zIndex: 0,
+                  }} />
+                )}
+                {/* Icon — larger than ring */}
+                {def.iconSrc
+                  ? <motion.img src={def.iconSrc} alt=""
+                      animate={hoverStopId === def.stopId ? { y: [0, -10, 0, -7, 0, -4, 0] } : { y: 0 }}
+                      transition={hoverStopId === def.stopId ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.25 }}
+                      style={{
+                        width: iconSize, height: iconSize, objectFit: 'contain',
+                        pointerEvents: 'none', position: 'relative', zIndex: 2,
+                        filter: allCompleted ? 'drop-shadow(0 4px 12px rgba(212,168,64,0.5))' : 'grayscale(0.4) opacity(0.7)',
+                      }} />
+                  : <span style={{ fontSize: 70, position: 'relative', zIndex: 2 }}>{finalEmoji}</span>
+                }
               </div>
             );
           }
@@ -801,93 +1046,105 @@ export default function MapView({
           return (
             <div
               key={def.stopId}
-              style={{
-                position: 'absolute',
-                left: `calc(${px(def.cx, VBX, VBW)} - ${btnSize / 2}px)`,
-                top: `calc(${px(def.cy, VBY, VBH)} - ${btnSize / 2}px)`,
-              }}
+              role="button"
+              tabIndex={0}
+              onClick={() => onSelectStop(stop)}
+              onKeyDown={(e) => e.key === 'Enter' && onSelectStop(stop)}
               onMouseEnter={() => setHoverStopId(def.stopId)}
               onMouseLeave={() => setHoverStopId(null)}
+              style={{
+                position: 'absolute',
+                left: `calc(${px(def.cx, VBX, VBW)} - ${iconSize / 2}px)`,
+                top: `calc(${px(def.cy, VBY, VBH)} - ${iconSize / 2 + 40}px)`,
+                width: iconSize, height: iconSize + 40,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                paddingBottom: 20,
+              }}
             >
-              <button
-                onClick={() => onSelectStop(stop)}
+              {/* Ring circle — centered behind icon */}
+              <svg
                 style={{
-                  width: btnSize,
-                  height: btnSize,
-                  borderRadius: '50%',
-                  border: allViewed
-                    ? '2.5px solid rgba(255,220,100,0.95)'
-                    : isSelected
-                    ? '2.5px solid rgba(255,255,255,0.95)'
-                    : '2px solid rgba(255,255,255,0.35)',
-                  background: allViewed
-                    ? 'rgba(255,200,60,0.18)'
-                    : isSelected
-                    ? 'rgba(255,255,255,0.15)'
-                    : 'rgba(8,14,24,0.45)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 2,
-                  backdropFilter: 'blur(5px)',
-                  boxShadow: allViewed
-                    ? '0 0 24px rgba(255,200,60,0.6)'
-                    : isSelected
-                    ? '0 0 16px rgba(255,255,255,0.35)'
-                    : '0 3px 12px rgba(0,0,0,0.5)',
-                  transition: 'all 0.2s',
-                  outline: 'none',
-                  position: 'relative',
+                  position: 'absolute',
+                  top: iconSize + 40 - 20 - iconSize / 2 - ringSize / 2,
+                  left: (iconSize - ringSize) / 2,
+                  pointerEvents: 'none', zIndex: 1,
                 }}
+                width={ringSize} height={ringSize}
+                viewBox={`0 0 ${ringSize} ${ringSize}`}
               >
-                {/* Icon image or emoji */}
-                {def.iconSrc
-                  ? <img src={def.iconSrc} style={{ width: 46, height: 46, objectFit: 'contain', pointerEvents: 'none', borderRadius: '50%' }} />
-                  : <span style={{ fontSize: 26, lineHeight: 1 }}>{stop.emoji}</span>
-                }
-                {/* Solved counter */}
-                {total > 0 && (
-                  <span style={{
-                    position: 'absolute',
-                    bottom: 4,
-                    fontSize: 9,
-                    color: allViewed ? '#ffd060' : 'rgba(255,255,255,0.85)',
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                  }}>
-                    {solved}/{total}
-                  </span>
-                )}
-
-                {/* Progress ring */}
-                <svg
-                  style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-                  viewBox={`0 0 ${btnSize} ${btnSize}`}
-                  width={btnSize}
-                  height={btnSize}
-                >
+                <circle
+                  cx={ringSize/2} cy={ringSize/2} r={ringSize/2-2}
+                  fill={allViewed ? 'rgba(255,200,60,0.18)' : isSelected ? 'rgba(255,110,20,0.22)' : 'rgba(8,14,24,0.45)'}
+                  stroke={allViewed ? 'rgba(255,220,100,0.95)' : isSelected ? 'rgba(255,120,30,0.98)' : 'rgba(255,255,255,0.35)'}
+                  strokeWidth={allViewed || isSelected ? 3 : 2}
+                />
+                {/* Progress track */}
+                <circle
+                  cx={ringSize/2} cy={ringSize/2} r={ringSize/2-2}
+                  fill="none"
+                  stroke={allViewed ? 'rgba(255,220,80,0.55)' : 'rgba(255,255,255,0.12)'}
+                  strokeWidth={3.5}
+                />
+                {/* Progress fill */}
+                {percent > 0 && (
                   <circle
-                    cx={btnSize / 2} cy={btnSize / 2} r={btnSize / 2 - 3}
+                    cx={ringSize/2} cy={ringSize/2} r={ringSize/2-2}
                     fill="none"
-                    stroke={allViewed ? 'rgba(255,220,80,0.55)' : 'rgba(255,255,255,0.12)'}
-                    strokeWidth={3}
+                    stroke={allViewed ? '#ffd060' : 'rgba(255,255,255,0.75)'}
+                    strokeWidth={3.5}
+                    strokeDasharray={`${((percent / 100) * 2 * Math.PI * (ringSize/2-2)).toFixed(1)} 999`}
+                    strokeLinecap="round"
+                    transform={`rotate(-90 ${ringSize/2} ${ringSize/2})`}
                   />
-                  {percent > 0 && (
-                    <circle
-                      cx={btnSize / 2} cy={btnSize / 2} r={btnSize / 2 - 3}
-                      fill="none"
-                      stroke={allViewed ? '#ffd060' : 'rgba(255,255,255,0.75)'}
-                      strokeWidth={3}
-                      strokeDasharray={`${((percent / 100) * 2 * Math.PI * (btnSize / 2 - 3)).toFixed(1)} 999`}
-                      strokeLinecap="round"
-                      transform={`rotate(-90 ${btnSize / 2} ${btnSize / 2})`}
-                    />
-                  )}
-                </svg>
-              </button>
+                )}
+              </svg>
+
+              {/* Glow halo — centered behind icon */}
+              <div style={{
+                position: 'absolute',
+                top: iconSize + 40 - 20 - iconSize / 2 - ringSize / 2,
+                left: (iconSize - ringSize) / 2,
+                width: ringSize, height: ringSize, borderRadius: '50%',
+                boxShadow: allViewed
+                  ? '0 0 24px rgba(255,200,60,0.6)'
+                  : isSelected
+                  ? '0 0 20px rgba(255,110,20,0.65), 0 0 40px rgba(255,80,0,0.25)'
+                  : '0 3px 12px rgba(0,0,0,0.5)',
+                pointerEvents: 'none', zIndex: 0,
+                transition: 'box-shadow 0.2s',
+              }} />
+
+              {/* Icon — larger than ring, floats on top */}
+              {def.iconSrc
+                ? <motion.img src={def.iconSrc} alt=""
+                    animate={hoverStopId === def.stopId ? { y: [0, -10, 0, -7, 0, -4, 0] } : { y: 0 }}
+                    transition={hoverStopId === def.stopId ? { duration: 1.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.25 }}
+                    style={{
+                      width: iconSize, height: iconSize, objectFit: 'contain',
+                      pointerEvents: 'none', position: 'relative', zIndex: 2,
+                      filter: allViewed
+                        ? 'drop-shadow(0 4px 14px rgba(255,200,60,0.55))'
+                        : isSelected
+                        ? 'drop-shadow(0 3px 10px rgba(255,255,255,0.4))'
+                        : 'drop-shadow(0 2px 6px rgba(0,0,0,0.7))',
+                    }} />
+                : <span style={{ fontSize: 70, lineHeight: 1, position: 'relative', zIndex: 2 }}>{stop.emoji}</span>
+              }
+
+              {/* Solved counter badge */}
+              {total > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  bottom: (iconSize - ringSize) / 2 - 2,
+                  fontSize: 9, fontWeight: 700, lineHeight: 1,
+                  color: allViewed ? '#ffd060' : 'rgba(255,255,255,0.85)',
+                  textShadow: '0 1px 4px rgba(0,0,0,0.9)',
+                  zIndex: 3, pointerEvents: 'none',
+                }}>
+                  {solved}/{total}
+                </span>
+              )}
             </div>
           );
         })}
@@ -904,8 +1161,8 @@ export default function MapView({
               style={{
                 position: 'absolute',
                 left: px(hoveredDef.cx, VBX, VBW),
-                top: `calc(${px(hoveredDef.cy + hoveredDef.labelDy - 28, VBY, VBH)})`,
-                transform: 'translate(-50%, -100%)',
+                top: `calc(${px(hoveredDef.cy + hoveredDef.labelDy + 22, VBY, VBH)})`,
+                transform: 'translate(-50%, 0)',
                 zIndex: 200,
                 pointerEvents: 'none',
                 width: 220,
@@ -1008,6 +1265,32 @@ export default function MapView({
         )}
       </AnimatePresence>
 
+      {/* ── Badge collection strip ── */}
+      <AnimatePresence>
+        {earnedBadges.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              position: 'absolute',
+              bottom: allCompleted ? 88 : 18,
+              left: '50%', transform: 'translateX(-50%)',
+              display: 'flex', gap: 6, zIndex: 50,
+              padding: '6px 12px',
+              background: 'rgba(6,10,20,0.88)',
+              borderRadius: 999,
+              border: '1px solid rgba(212,168,64,0.3)',
+              backdropFilter: 'blur(8px)',
+              transition: 'bottom 0.3s',
+            }}
+          >
+            {earnedBadges.map((badge, i) => (
+              <BadgeStar key={badge.id} label={badge.label} index={i} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Modal ── */}
       <AnimatePresence>
         {modalStop && (
@@ -1017,7 +1300,8 @@ export default function MapView({
             viewedMediaIds={viewedMediaIds}
             onChallengeSolved={onChallengeSolved}
             onMediaViewed={onMediaViewed}
-            onClose={() => onSelectStop(modalStop)}
+            onClose={onDeselectStop}
+            onBadgeEarned={handleBadgeEarned}
           />
         )}
       </AnimatePresence>

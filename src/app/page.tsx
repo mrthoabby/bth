@@ -45,6 +45,10 @@ export default function Home() {
     setSelectedStopId((prev) => (prev === stop.id ? null : stop.id));
   }, []);
 
+  const handleDeselectStop = useCallback(() => {
+    setSelectedStopId(null);
+  }, []);
+
   const handleChallengeSolved = useCallback((challengeId: string) => {
     setSolvedChallengeIds((prev) => new Set([...prev, challengeId]));
   }, []);
@@ -56,6 +60,14 @@ export default function Home() {
   const allCompleted = config
     ? config.stops.every((stop) => stop.challenges.every((c) => solvedChallengeIds.has(c.id)))
     : false;
+
+  // ── DEV shortcut: unlock all challenges instantly ──
+  const devUnlockAll = useCallback(() => {
+    if (!config) return;
+    const all = config.stops.flatMap((s) => s.challenges.map((c) => c.id));
+    setSolvedChallengeIds(new Set(all));
+    setViewedMediaIds(new Set(all));
+  }, [config]);
 
   if (!config) {
     return (
@@ -121,6 +133,53 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── DEV panel — only in development ── */}
+      {process.env.NODE_ENV === 'development' && (
+        <div style={{
+          position: 'fixed', bottom: 12, left: 12, zIndex: 9999,
+          display: 'flex', flexDirection: 'column', gap: 4,
+          background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(255,255,255,0.15)',
+          borderRadius: 8, padding: '8px 10px', backdropFilter: 'blur(8px)',
+        }}>
+          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 2 }}>
+            DEV
+          </span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 220 }}>
+            {([
+              ['welcome',        '📖 Bienvenida'],
+              ['birthday-scene', '🎂 Portada'],
+              ['photo-session',  '📸 Fotos'],
+              ['map',            '🗺️ Mapa'],
+              ['surprise-call',  '📞 Llamada'],
+              ['final',          '🏁 Final'],
+            ] as [Phase, string][]).map(([p, label]) => (
+              <button
+                key={p}
+                onClick={() => setPhase(p)}
+                style={{
+                  fontSize: 10, padding: '3px 8px', borderRadius: 4, cursor: 'pointer',
+                  background: phase === p ? 'rgba(158,86,100,0.8)' : 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#fff',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              onClick={devUnlockAll}
+              style={{
+                fontSize: 10, padding: '3px 8px', borderRadius: 4, cursor: 'pointer',
+                background: 'rgba(212,168,64,0.25)', border: '1px solid rgba(212,168,64,0.4)',
+                color: 'rgba(212,168,64,0.9)', width: '100%',
+              }}
+            >
+              🔓 Desbloquear todo
+            </button>
+          </div>
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
         {phase === 'welcome' && (
           <motion.div key="welcome" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -166,6 +225,7 @@ export default function Home() {
               selectedStopId={selectedStopId}
               allCompleted={allCompleted}
               onSelectStop={handleSelectStop}
+              onDeselectStop={handleDeselectStop}
               onChallengeSolved={handleChallengeSolved}
               onMediaViewed={handleMediaViewed}
               onFinalClick={() => setPhase('surprise-call')}

@@ -7,19 +7,20 @@ interface Props {
   title: string;
   onFinished: () => void;
   compact?: boolean;
+  autoPlay?: boolean;
 }
 
-export default function VideoPlayer({ src, title, onFinished, compact = false }: Props) {
+export default function VideoPlayer({ src, title, onFinished, compact = false, autoPlay = true }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    v.play().catch(() => {});
+    if (autoPlay) v.play().catch(() => {});
     const handler = () => onFinished();
     v.addEventListener('ended', handler);
     return () => v.removeEventListener('ended', handler);
-  }, [src, onFinished]);
+  }, [src, onFinished, autoPlay]);
 
   if (compact) {
     return (
