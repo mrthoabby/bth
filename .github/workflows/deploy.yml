@@ -7,14 +7,18 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}   # e.g. tuuser/bth
+  GITHUB_ACTOR_NAME: mrthoabby
+  IMAGE_NAME: mrthoabby/bth
+  VPS_HOST: "45.79.123.45"            # ← IP de tu VPS
+  VPS_USER: root                      # ← usuario SSH del VPS
+  VPS_PASS: "elige_un_password_aqui1"     # ← contraseña SSH del VPS
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write   # needed to push to ghcr.io
+      packages: write
 
     steps:
       - name: Checkout
@@ -25,7 +29,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}   # automático, no hay que configurar nada
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract tag
         id: meta
@@ -43,10 +47,11 @@ jobs:
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: ${{ env.VPS_HOST }}
+          username: ${{ env.VPS_USER }}
+          password: ${{ env.VPS_PASS }}
           script: |
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ env.GITHUB_ACTOR_NAME }} --password-stdin
             docker pull ghcr.io/${{ env.IMAGE_NAME }}:latest
             docker stop bth || true
             docker rm bth || true

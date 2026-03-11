@@ -122,10 +122,10 @@ function playDrone(ac: AudioContext) {
 }
 
 export default function RouletteScreen({ onDone }: Props) {
-  const [spinning, setSpinning]     = useState(false);
-  const [rotation, setRotation]     = useState(0);
-  const [done, setDone]             = useState(false);
-  const [revealing, setRevealing]   = useState(false);
+  const [spinning, setSpinning]   = useState(false);
+  const [rotation, setRotation]   = useState(0);
+  const [done, setDone]           = useState(false);
+  const [revealing, setRevealing] = useState(false);
   const acRef = useRef<AudioContext | null>(null);
 
   const spin = () => {
@@ -163,20 +163,10 @@ export default function RouletteScreen({ onDone }: Props) {
     }
   };
 
-  const wheelSize = Math.min(typeof window !== 'undefined' ? window.innerWidth * 0.88 : 380, 380);
+  const wheelSize = 290;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 400,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        background: 'radial-gradient(ellipse at center, rgba(48,6,36,0.98) 0%, rgba(6,2,14,0.99) 100%)',
-        gap: 16, padding: '20px 16px', overflowY: 'auto',
-      }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '24px 20px' }}>
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
         style={{ textAlign: 'center', maxWidth: 360 }}>
@@ -287,10 +277,10 @@ export default function RouletteScreen({ onDone }: Props) {
       </motion.div>
 
       {/* Status / action */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {revealing && (
           <motion.p key="suspense"
-            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: [0, 1, 0.7, 1] }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: [0, 1, 0.7, 1] }} exit={{ opacity: 0, transition: { duration: 0.2 } }}
             transition={{ duration: 0.6, repeat: Infinity }}
             style={{ fontSize: 16, fontWeight: 700, color: '#f8dde4', textAlign: 'center', margin: 0 }}
           >
@@ -355,11 +345,11 @@ export default function RouletteScreen({ onDone }: Props) {
                 marginTop: 4,
               }}
             >
-              ▶ Ver Video Final
+              ▶ Continuar →
             </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

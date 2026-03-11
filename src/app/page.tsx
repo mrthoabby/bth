@@ -11,15 +11,14 @@ import RosePetals from '@/components/RosePetals';
 import WelcomeScreen from '@/components/WelcomeScreen';
 import BirthdayScene from '@/components/BirthdayScene';
 import MapView from '@/components/MapView';
-import FinalScreen from '@/components/FinalScreen';
 import RouletteScreen from '@/components/RouletteScreen';
 
 const SurpriseCall = dynamic(() => import('@/components/SurpriseCall'), { ssr: false });
 const PhotoSession = dynamic(() => import('@/components/PhotoSession'), { ssr: false });
 const BackgroundStream = dynamic(() => import('@/components/BackgroundStream'), { ssr: false });
 
-type Phase = 'welcome' | 'birthday-scene' | 'photo-session' | 'map' | 'final';
-type Overlay = 'none' | 'paris-modal' | 'roulette' | 'surprise-call';
+type Phase = 'welcome' | 'birthday-scene' | 'photo-session' | 'map';
+type Overlay = 'none' | 'paris-modal' | 'roulette' | 'surprise-call' | 'final';
 
 export default function Home() {
   const [config, setConfig] = useState<BirthdayConfig | null>(null);
@@ -34,7 +33,7 @@ export default function Home() {
 
   const [bgToken, setBgToken] = useState<{ token: string; url: string } | null>(null);
 
-  const { state: recordingState, start: startRecording, stop: stopRecording, camStream, screenStream } = useRecording();
+  const { state: recordingState, start: startRecording, camStream, screenStream } = useRecording();
 
   useEffect(() => {
     loadConfig().then((cfg) => {
@@ -240,7 +239,7 @@ export default function Home() {
           screenStream={screenStream}
         >
           {overlay === 'surprise-call' && (
-            <SurpriseCall onCallEnded={() => { setOverlay('none'); setPhase('final'); }} />
+            <SurpriseCall onCallEnded={() => setOverlay('final')} />
           )}
         </BackgroundStream>
       )}
@@ -301,133 +300,110 @@ export default function Home() {
           </motion.div>
         )}
 
-        {phase === 'final' && (
-          <motion.div key="final" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <FinalScreen
-              message={config.final.finalMessage}
-              subMessage={config.final.finalSubMessage}
-              recordingState={recordingState}
-              onStopRecording={stopRecording}
-            />
-          </motion.div>
-        )}
       </AnimatePresence>
 
-      {/* ── Overlays — rendered on top of map without unmounting it ── */}
+      {/* ── Overlays (paris-modal / roulette / final) — same modal shell ── */}
       <AnimatePresence>
-        {overlay === 'paris-modal' && (
+        {(overlay === 'paris-modal' || overlay === 'roulette' || overlay === 'final') && (
           <motion.div
-            key="paris-modal"
+            key={overlay}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => setOverlay('none')}
             style={{
-              position: 'fixed', inset: 0, zIndex: 300,
+              position: 'fixed', inset: 0, zIndex: 1000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(4,2,10,0.88)',
-              backdropFilter: 'blur(10px)',
-              padding: 24,
+              background: 'rgba(10,8,20,0.72)',
+              backdropFilter: 'blur(6px)',
+              padding: 16,
             }}
           >
             <motion.div
-              initial={{ scale: 0.88, y: 30, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 160, damping: 20, delay: 0.1 }}
+              initial={{ scale: 0.96, y: 8 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.12 }}
+              onClick={(e) => e.stopPropagation()}
               style={{
-                maxWidth: 420, width: '100%',
-                background: 'linear-gradient(160deg, rgba(20,6,18,0.98), rgba(10,2,12,0.99))',
-                border: '1.5px solid rgba(215,95,115,0.45)',
-                borderRadius: 24,
-                padding: '40px 32px',
-                boxShadow: '0 0 60px rgba(175,55,78,0.25), 0 20px 60px rgba(0,0,0,0.7)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
-                textAlign: 'center',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 20,
+                width: '100%',
+                maxWidth: 480,
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 280, damping: 14, delay: 0.25 }}
-                style={{ fontSize: 52 }}
-              >
-                🔓
-              </motion.div>
+              {/* Header */}
+              <div style={{ padding: '14px 18px 12px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                <span style={{ fontSize: 22 }}>
+                  {overlay === 'paris-modal' ? '🔓' : overlay === 'roulette' ? '🎰' : '💝'}
+                </span>
+                <h3 className="serif" style={{ flex: 1, fontSize: 17, color: 'var(--text)', margin: 0 }}>
+                  {overlay === 'paris-modal' ? 'Secretos Desbloqueados' : overlay === 'roulette' ? 'Premio Especial' : 'Feliz Cumpleaños'}
+                </h3>
+                <button onClick={() => setOverlay('none')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 18, padding: '2px 6px' }}>✕</button>
+              </div>
 
-              <motion.h2
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 }}
-                style={{ fontSize: 22, fontWeight: 700, color: '#f8dde4', margin: 0, letterSpacing: '0.02em' }}
-              >
-                Secretos Desbloqueados
-              </motion.h2>
-
-              <motion.p
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45 }}
-                style={{ fontSize: 14, color: 'rgba(230,180,195,0.85)', lineHeight: 1.7, margin: 0 }}
-              >
-                Lo lograste. Cada enigma, cada isla, cada historia.{'\n'}
-                Como último regalo, hay un video esperándote.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.55 }}
-                style={{
-                  width: '100%',
-                  padding: '14px 0',
-                  borderTop: '1px solid rgba(215,95,115,0.2)',
-                  borderBottom: '1px solid rgba(215,95,115,0.2)',
-                  display: 'flex', flexDirection: 'column', gap: 8,
-                }}
-              >
-                {['Todos los mensajes', 'Todas las islas', 'Todos los enigmas'].map((item, i) => (
-                  <motion.div
-                    key={item}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.55 + i * 0.1 }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'rgba(200,255,210,0.85)' }}
-                  >
-                    <span style={{ color: '#4ecb71', fontSize: 16 }}>✓</span> {item}
+              {/* Body */}
+              {overlay === 'paris-modal' && (
+                <div style={{ padding: '28px 28px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, textAlign: 'center' }}>
+                  <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                    style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.7, margin: 0 }}>
+                    Lo lograste. Cada enigma, cada isla, cada historia.
+                  </motion.p>
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                    style={{ width: '100%', padding: '14px 0', borderTop: '1px solid rgba(215,95,115,0.2)', borderBottom: '1px solid rgba(215,95,115,0.2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {['Todos los mensajes', 'Todas las islas', 'Todos los enigmas'].map((item) => (
+                      <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--text)' }}>
+                        <span style={{ color: '#4ecb71', fontSize: 16 }}>✓</span> {item}
+                      </div>
+                    ))}
                   </motion.div>
-                ))}
-              </motion.div>
+                  <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 }}
+                    whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => setOverlay('roulette')}
+                    style={{ width: '100%', padding: '16px 24px', background: 'linear-gradient(135deg, rgba(175,55,78,0.95), rgba(135,38,58,0.95))', border: '1.5px solid rgba(215,95,115,0.6)', borderRadius: 14, color: '#fff', fontSize: 16, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 24px rgba(175,55,78,0.45)', letterSpacing: '0.03em' }}>
+                    🎰 ¡Girar la Ruleta!
+                  </motion.button>
+                </div>
+              )}
 
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.75 }}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setOverlay('roulette')}
-                style={{
-                  width: '100%',
-                  padding: '16px 24px',
-                  background: 'linear-gradient(135deg, rgba(175,55,78,0.95), rgba(135,38,58,0.95))',
-                  border: '1.5px solid rgba(215,95,115,0.6)',
-                  borderRadius: 14,
-                  color: '#fff',
-                  fontSize: 16,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 24px rgba(175,55,78,0.45)',
-                  letterSpacing: '0.03em',
-                }}
-              >
-                ▶ Ver Video Final
-              </motion.button>
+              {overlay === 'roulette' && (
+                <RouletteScreen onDone={() => setOverlay('final')} />
+              )}
+
+              {overlay === 'final' && (
+                <div style={{ padding: '36px 28px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, textAlign: 'center' }}>
+                  <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 70, delay: 0.15 }} style={{ fontSize: 52 }}>
+                    💝
+                  </motion.div>
+                  <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+                    className="serif glow-text"
+                    style={{ fontSize: 'clamp(24px,5vw,34px)', fontWeight: 400, color: 'var(--text)', letterSpacing: '-0.01em', margin: 0 }}>
+                    Feliz Cumpleaños
+                  </motion.h1>
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
+                    style={{ fontSize: 14, color: 'rgba(230,180,195,0.82)', lineHeight: 1.7, margin: 0 }}>
+                    {config.final.finalMessage}
+                  </motion.p>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
+                    style={{ display: 'flex', gap: 14, fontSize: 18, opacity: 0.5 }}>
+                    {['❤','🌹','♡','🌸','❤','♡','🌹'].map((e, i) => (
+                      <motion.span key={i} animate={{ y: [0,-7,0], scale: [1,1.1,1] }} transition={{ delay: i * 0.14, repeat: Infinity, duration: 2.2 }}>{e}</motion.span>
+                    ))}
+                  </motion.div>
+                </div>
+              )}
+
             </motion.div>
           </motion.div>
         )}
-
-        {overlay === 'roulette' && (
-          <RouletteScreen key="roulette" onDone={() => setOverlay('surprise-call')} />
-        )}
-
       </AnimatePresence>
     </main>
   );
