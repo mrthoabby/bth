@@ -12,6 +12,17 @@ import {
 import '@livekit/components-styles';
 import { Track, RoomEvent, RemoteAudioTrack, ConnectionState } from 'livekit-client';
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ChatMessage {
   id: string;
@@ -21,7 +32,7 @@ interface ChatMessage {
 }
 
 // ─── Chat sidebar ─────────────────────────────────────────────────────────────
-function ChatPanel({ myName }: { myName: string }) {
+function ChatPanel({ myName, mobile }: { myName: string; mobile?: boolean }) {
   const room = useRoomContext();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -68,11 +79,11 @@ function ChatPanel({ myName }: { myName: string }) {
 
   return (
     <div style={{
-      width: 280, flexShrink: 0,
+      ...(mobile
+        ? { width: '100%', height: 240, borderTop: '1px solid rgba(255,255,255,0.08)' }
+        : { width: 280, flexShrink: 0, borderLeft: '1px solid rgba(255,255,255,0.08)', height: '100%' }),
       display: 'flex', flexDirection: 'column',
       background: 'rgba(6,10,20,0.95)',
-      borderLeft: '1px solid rgba(255,255,255,0.08)',
-      height: '100%',
     }}>
       {/* Header */}
       <div style={{
@@ -168,6 +179,7 @@ function ChatPanel({ myName }: { myName: string }) {
 // ─── Video grid ───────────────────────────────────────────────────────────────
 function VideoGrid({ myName }: { myName: string }) {
   const participants = useParticipants();
+  const isMobile = useIsMobile();
 
   const camTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
     .filter((t) => t.participant != null && t.publication != null);
@@ -227,7 +239,7 @@ function VideoGrid({ myName }: { myName: string }) {
         {remoteScreen.length > 0 && birthdayCam && (
           <div style={{
             position: 'absolute', bottom: 12, right: 12,
-            width: 182, height: 130,
+            width: isMobile ? 100 : 182, height: isMobile ? 72 : 130,
             borderRadius: 10, overflow: 'hidden',
             border: '2px solid rgba(232,69,90,0.7)',
             boxShadow: '0 0 18px rgba(232,69,90,0.35)',
@@ -307,6 +319,8 @@ function RoomInner({ myName }: { myName: string }) {
   const room = useRoomContext();
   const participants = useParticipants();
   const [birthdayMuted, setBirthdayMuted] = useState(false);
+  const isMobile = useIsMobile();
+  const [chatOpen, setChatOpen] = useState(false);
 
   // On connect: camera ON, mic ALWAYS OFF — guaranteed, no race
   useEffect(() => {
@@ -350,9 +364,55 @@ function RoomInner({ myName }: { myName: string }) {
   return (
     <>
     <RoomAudioRenderer />
-    <div style={{ display: 'flex', height: '100vh', background: '#050912', overflow: 'hidden' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
+      height: '100dvh',
+      background: '#050912',
+      overflow: 'hidden',
+    }}>
       <VideoGrid myName={myName} />
-      <ChatPanel myName={myName} />
+      {isMobile ? (
+        <>
+          {/* Floating chat toggle button */}
+          <button
+            onClick={() => setChatOpen((v) => !v)}
+            style={{
+              position: 'fixed', bottom: 16, right: 16, zIndex: 50,
+              width: 48, height: 48, borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(175,55,78,0.92), rgba(135,38,58,0.92))',
+              border: '1.5px solid rgba(215,95,115,0.6)',
+              color: '#fff', fontSize: 20, cursor: 'pointer',
+              boxShadow: '0 4px 20px rgba(175,55,78,0.45)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {chatOpen ? '✕' : '💬'}
+          </button>
+          {/* Slide-up chat panel */}
+          <AnimatePresence>
+            {chatOpen && (
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+                style={{
+                  position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
+                  height: '55vh',
+                  borderRadius: '18px 18px 0 0',
+                  overflow: 'hidden',
+                  boxShadow: '0 -4px 30px rgba(0,0,0,0.6)',
+                }}
+              >
+                <ChatPanel myName={myName} mobile />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      ) : (
+        <ChatPanel myName={myName} />
+      )}
     </div>
     </>
   );
