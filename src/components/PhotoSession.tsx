@@ -425,52 +425,58 @@ function ConfirmView({
           </div>
         </motion.div>
 
-        {/* Right: photo strip — all photos, clickable */}
+        {/* Right: photo pile — stacked polaroids, click top to open lightbox */}
         <motion.div
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
           style={{
-            width: 'clamp(200px, 38%, 320px)',
-            padding: '28px 24px',
+            width: 'clamp(160px, 28%, 220px)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 14,
+            gap: 12,
+            padding: '28px 24px',
           }}
         >
-          {photos.map((src, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10, rotate: i % 2 === 0 ? -3 : 2 }}
-              animate={{ opacity: 1, y: 0, rotate: i % 2 === 0 ? -2 : 1.5 }}
-              transition={{ delay: 0.1 + i * 0.12, type: 'spring', stiffness: 140 }}
-              whileHover={{ scale: 1.07, rotate: 0, zIndex: 10 }}
-              onClick={() => setLightboxIndex(i)}
-              style={{
-                background: '#f8f5f2',
-                padding: '8px 8px 28px',
-                borderRadius: 4,
-                boxShadow: '0 6px 28px rgba(0,0,0,0.5)',
-                cursor: 'zoom-in',
-                position: 'relative',
-                width: '100%',
-                maxWidth: 200,
-              }}
-            >
-              <img
-                src={src}
-                alt={`recuerdo ${i + 1}`}
-                style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 3, display: 'block', transform: 'scaleX(-1)' }}
-              />
-              <p style={{ textAlign: 'center', marginTop: 6, fontSize: 10, color: 'rgba(60,40,30,0.45)', fontFamily: '"Georgia",serif' }}>
-                📸 {i + 1}
-              </p>
-            </motion.div>
-          ))}
-          <p style={{ fontSize: 10, color: 'rgba(212,168,64,0.5)', fontStyle: 'italic', fontFamily: '"Georgia",serif', textAlign: 'center' }}>
-            toca para ampliar
+          {/* Pile — max 3 visible, top photo is clickable */}
+          <div style={{ position: 'relative', width: 140, height: 155 }}>
+            {photos.slice(-3).map((src, i, arr) => {
+              const isTop = i === arr.length - 1;
+              const behind = arr.length - 1 - i;
+              const rotate = (i % 2 === 0 ? 1 : -1) * (behind * 5 + 2);
+              return (
+                <motion.div
+                  key={photos.length - arr.length + i}
+                  initial={isTop ? { scale: 0.5, opacity: 0, rotate: rotate + 20 } : false}
+                  animate={{ scale: 1, opacity: 1, rotate, x: behind * -4, y: behind * -4 }}
+                  transition={isTop ? { type: 'spring', stiffness: 200, damping: 18 } : { duration: 0.25 }}
+                  whileHover={isTop ? { scale: 1.05, rotate: 0 } : undefined}
+                  onClick={isTop ? () => setLightboxIndex(photos.length - 1) : undefined}
+                  style={{
+                    position: 'absolute', top: 0, left: 0,
+                    background: '#f8f5f2',
+                    padding: '8px 8px 30px',
+                    borderRadius: 6,
+                    boxShadow: '0 6px 28px rgba(0,0,0,0.5)',
+                    cursor: isTop ? 'zoom-in' : 'default',
+                    zIndex: i,
+                    width: 140,
+                    transformOrigin: 'center bottom',
+                  }}
+                >
+                  <img
+                    src={src}
+                    alt={`recuerdo ${i + 1}`}
+                    style={{ width: '100%', height: 110, objectFit: 'cover', borderRadius: 3, display: 'block', transform: 'scaleX(-1)' }}
+                  />
+                </motion.div>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 10, color: 'rgba(212,168,64,0.5)', fontStyle: 'italic', fontFamily: '"Georgia",serif', textAlign: 'center', margin: 0 }}>
+            {photos.length} foto{photos.length !== 1 ? 's' : ''} · toca para ampliar
           </p>
         </motion.div>
       </motion.div>
@@ -507,7 +513,7 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
   const [saved, setSaved] = useState(false);
   const [extrasTaken, setExtrasTaken] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const MAX_EXTRAS = 3;
+  const MAX_EXTRAS = 1;
   const photo1Ref = useRef<string | null>(null);
 
   const capturePhoto = useCallback((): string | null => {
@@ -775,8 +781,8 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
         </AnimatePresence>
       </div>
 
-      {/* Status row: label + photo pile in one line */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, minHeight: 92 }}>
+      {/* Status row: label + photo pile — pinned to bottom of screen */}
+      <div style={{ position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 16, zIndex: 20, background: 'rgba(8,3,16,0.75)', backdropFilter: 'blur(10px)', borderRadius: 12, padding: '8px 18px', border: '1px solid rgba(212,168,64,0.15)' }}>
         <motion.p
           key={step}
           initial={{ opacity: 0, y: 4 }}
@@ -791,11 +797,7 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
 
         {/* Photo pile — polaroids stacked, latest on top */}
         {photos.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{ position: 'relative', width: 80, height: 92, flexShrink: 0 }}
-        >
+        <div style={{ position: 'relative', width: 80, height: 92, flexShrink: 0 }}>
           {photos.slice(-3).map((src, i, arr) => {
             const isTop = i === arr.length - 1;
             // Each photo behind the top is offset a bit
@@ -828,7 +830,7 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
               </motion.div>
             );
           })}
-        </motion.div>
+        </div>
         )}
       </div>
 

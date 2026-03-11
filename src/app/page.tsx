@@ -67,7 +67,11 @@ export default function Home() {
   }, [startRecording]);
 
   const handlePhotoCaptured = useCallback((photoDataUrl: string) => {
-    setHangingPhotos((prev) => [...prev, photoDataUrl]);
+    setHangingPhotos((prev) => {
+      // Replace photos from current session (max 3), don't accumulate across sessions
+      if (prev.length >= 3) return [...prev.slice(1), photoDataUrl];
+      return [...prev, photoDataUrl];
+    });
   }, []);
 
   // Silently capture a frame from the live camera stream
@@ -153,8 +157,8 @@ export default function Home() {
               borderRadius: 999,
             }}
           />
-          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
-            {hangingPhotos.map((photo, i) => (
+          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 18, flexWrap: 'nowrap' }}>
+            {hangingPhotos.slice(-3).map((photo, i) => (
               <div key={`${photo.slice(0, 24)}-${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: 1, height: 22, background: 'rgba(95, 48, 57, 0.55)' }} />
                 <div
