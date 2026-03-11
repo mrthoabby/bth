@@ -38,10 +38,6 @@ export default function Home() {
   useEffect(() => {
     loadConfig().then((cfg) => {
       setConfig(cfg);
-      // DEV: auto-unlock all for testing
-      const all = cfg.stops.flatMap((s) => s.challenges.map((c) => c.id));
-      setSolvedChallengeIds(new Set(all));
-      setViewedMediaIds(new Set(all));
     }).catch(console.error);
   }, []);
 

@@ -336,7 +336,7 @@ const ISLAND_DEFS: IslandDef[] = [
 
 const PARIS_DEF: IslandDef = {
   stopId: 'paris',
-  cx: 260, cy: 100,
+  cx: 360, cy: 500,
   offsets: [[-60,10],[-48,-28],[-18,-50],[20,-54],[58,-36],[72,-2],[62,22],[28,38],[-8,42],[-46,28]],
   topLight: '#d07898', topDark: '#9a4868',
   cliffColor: '#6a3050', cliffDepth: 28,
@@ -832,8 +832,30 @@ function NodeModal({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.1 }}
-              style={{ display: 'flex', flexWrap: 'nowrap', flex: 1, minHeight: 0 }}
+              style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
             >
+              {/* Challenge title — full width above columns */}
+              <div style={{
+                padding: '10px 18px 8px',
+                borderBottom: '1px solid var(--border)',
+                flexShrink: 0,
+              }}>
+                <p style={{
+                  margin: 0,
+                  fontSize: 12,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.13em',
+                  color: 'var(--rose)',
+                  opacity: 0.75,
+                  fontWeight: 600,
+                }}>
+                  {activeChallenge.title}
+                </p>
+              </div>
+
+              {/* Columns row */}
+              <div style={{ display: 'flex', flexWrap: 'nowrap', flex: 1, minHeight: 0 }}>
+
               {/* Left column — continuar button + riddle */}
               <div style={{
                 flex: '0 0 30%',
@@ -884,7 +906,6 @@ function NodeModal({
                 </AnimatePresence>
                 <RiddleScreen
                   riddle={activeChallenge.riddle}
-                  title={activeChallenge.title}
                   compact
                   onSolved={() => { playUnlock(); setJustSolvedId(activeChallenge.id); onChallengeSolved(activeChallenge.id); }}
                   onFirstTrySolve={() => onBadgeEarned(activeChallenge.id, activeChallenge.title)}
@@ -968,6 +989,7 @@ function NodeModal({
                   </>
                 )}
               </div>
+              </div>{/* end columns row */}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -1430,7 +1452,7 @@ export default function MapView({
             const isFinal = def.stopId === 'inglaterra';
             const accessible = stop ? isStopAccessible(def.stopId, stops, solvedChallengeIds) : true;
             const name = stop
-              ? (accessible ? stopDisplayName(stop, solvedChallengeIds) : '???')
+              ? (!accessible && stop.hiddenName ? '???' : stopDisplayName(stop, solvedChallengeIds))
               : (isFinal ? finalTitle : '???');
             const { solved, total } = stop ? stopProgress(stop, solvedChallengeIds) : { solved: 0, total: 0 };
             const remaining = total - solved;

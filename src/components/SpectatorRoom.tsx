@@ -188,7 +188,7 @@ function VideoGrid({ myName }: { myName: string }) {
 
   // birthday girl's screen or camera shown in main area
   const birthdayScreen = screenTracks.find((t) => t.participant.identity.startsWith('birthday'));
-  const remoteScreen = birthdayScreen ? [birthdayScreen] : screenTracks.filter((t) => !t.participant.isLocal && t.participant.identity !== 'caller-person');
+  const remoteScreen = birthdayScreen ? [birthdayScreen] : [];
   const birthdayCam = camTracks.find((t) => t.participant.identity.startsWith('birthday'));
   // spectator cams: exclude birthday girl AND caller admin
   const spectatorCams = camTracks.filter((t) =>

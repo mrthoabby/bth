@@ -550,10 +550,10 @@
     },
     {
       "id": "enigma1",
-      "title": "Medayork 3",
+      "title": "Medayork",
       "emoji": "🌆",
       "hiddenName": false,
-      "revealNameAtPercent": 0,
+      "revealNameAtPercent": 100,
       "challenges": [
         {
           "id": "enigma1_r1",
@@ -580,10 +580,10 @@
     },
     {
       "id": "enigma2",
-      "title": "Medayork 4",
+      "title": "Medayork",
       "emoji": "🌆",
       "hiddenName": false,
-      "revealNameAtPercent": 0,
+      "revealNameAtPercent": 100,
       "challenges": [
         {
           "id": "enigma2_r1",
