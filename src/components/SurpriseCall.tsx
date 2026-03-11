@@ -1,8 +1,7 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
-  LiveKitRoom,
   useRoomContext,
   useTracks,
   VideoTrack,
@@ -14,17 +13,17 @@ interface Props {
   onCallEnded: () => void;
 }
 
-// Inner component — looks like a video player, never reveals it's a live call
-function VideoView({ onCallEnded }: { onCallEnded: () => void }) {
+// Renders inside BackgroundStream's LiveKitRoom — shows caller's camera as a video modal
+export default function SurpriseCall({ onCallEnded }: Props) {
   const room = useRoomContext();
 
   const remoteTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
     .filter((t) => !t.participant.isLocal);
 
   const handleEnd = useCallback(() => {
-    room.disconnect();
+    // Don't disconnect — room stays alive for spectators and caller
     onCallEnded();
-  }, [room, onCallEnded]);
+  }, [onCallEnded]);
 
   useEffect(() => {
     room.on(RoomEvent.Disconnected, onCallEnded);
@@ -48,14 +47,14 @@ function VideoView({ onCallEnded }: { onCallEnded: () => void }) {
         aspectRatio: '16/9',
       }}>
 
-        {/* "Video" content — caller's camera only */}
+        {/* Caller's camera — looks like a video */}
         {remoteTracks[0] ? (
           <VideoTrack
             trackRef={remoteTracks[0]}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         ) : (
-          /* Buffering state — looks like a video loading */
+          /* Buffering state */
           <div style={{
             width: '100%', height: '100%',
             display: 'flex', flexDirection: 'column',
@@ -79,7 +78,7 @@ function VideoView({ onCallEnded }: { onCallEnded: () => void }) {
           </div>
         )}
 
-        {/* Invisible close — only appears on hover, no call language */}
+        {/* Invisible close — hover only, no call language */}
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 0 }}
@@ -96,47 +95,5 @@ function VideoView({ onCallEnded }: { onCallEnded: () => void }) {
         </motion.button>
       </div>
     </div>
-  );
-}
-
-export default function SurpriseCall({ onCallEnded }: Props) {
-  const [token, setToken] = useState<string | null>(null);
-  const [serverUrl, setServerUrl] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-  const [connecting, setConnecting] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/livekit-token?role=birthday')
-      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
-      .then((d) => { setToken(d.token); setServerUrl(d.url); })
-      .catch(() => setError('Error al conectar'))
-      .finally(() => setConnecting(false));
-  }, []);
-
-  if (connecting) {
-    return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.6 }} style={{ fontSize: 56 }}>
-          🌹
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (error || !token) {
-    return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: '#050812', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <p style={{ color: 'rgba(232,69,90,0.8)' }}>{error}</p>
-        <button style={{ padding: '10px 24px', background: 'rgba(175,55,78,0.8)', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={onCallEnded}>
-          Continuar
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <LiveKitRoom token={token} serverUrl={serverUrl} connect video={true} audio={true}>
-      <VideoView onCallEnded={onCallEnded} />
-    </LiveKitRoom>
   );
 }

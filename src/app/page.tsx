@@ -181,20 +181,36 @@ export default function Home() {
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 220 }}>
             {([
-              ['secret',         '🔑 Secreta'],
               ['welcome',        '📖 Bienvenida'],
               ['birthday-scene', '🎂 Portada'],
               ['photo-session',  '📸 Fotos'],
               ['map',            '🗺️ Mapa'],
-              ['surprise-call',  '📞 Llamada'],
               ['final',          '🏁 Final'],
             ] as [Phase, string][]).map(([p, label]) => (
               <button
                 key={p}
-                onClick={() => setPhase(p)}
+                onClick={() => { setPhase(p); setOverlay('none'); }}
                 style={{
                   fontSize: 10, padding: '3px 8px', borderRadius: 4, cursor: 'pointer',
                   background: phase === p ? 'rgba(158,86,100,0.8)' : 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#fff',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+            {([
+              ['paris-modal',   '🔓 Modal'],
+              ['roulette',      '🎡 Ruleta'],
+              ['surprise-call', '📞 Llamada'],
+            ] as [Overlay, string][]).map(([o, label]) => (
+              <button
+                key={o}
+                onClick={() => { setPhase('map'); setOverlay(o); }}
+                style={{
+                  fontSize: 10, padding: '3px 8px', borderRadius: 4, cursor: 'pointer',
+                  background: overlay === o ? 'rgba(86,100,158,0.8)' : 'rgba(255,255,255,0.1)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   color: '#fff',
                 }}
@@ -216,13 +232,17 @@ export default function Home() {
         </div>
       )}
 
-      {bgToken && phase !== 'surprise-call' && (
+      {bgToken && (
         <BackgroundStream
           token={bgToken.token}
           serverUrl={bgToken.url}
           camStream={camStream}
           screenStream={screenStream}
-        />
+        >
+          {overlay === 'surprise-call' && (
+            <SurpriseCall onCallEnded={() => { setOverlay('none'); setPhase('final'); }} />
+          )}
+        </BackgroundStream>
       )}
 
       <AnimatePresence mode="wait">
@@ -236,7 +256,6 @@ export default function Home() {
             />
           </motion.div>
         )}
-
 
         {phase === 'birthday-scene' && (
           <motion.div key="birthday-scene" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -273,16 +292,30 @@ export default function Home() {
               onDeselectStop={handleDeselectStop}
               onChallengeSolved={handleChallengeSolved}
               onMediaViewed={handleMediaViewed}
-              onSurpriseCall={() => setPhase('surprise-call')}
-              onFinalClick={() => setPhase('paris-modal')}
-              onParisClick={() => setPhase('paris-modal')}
+              onSurpriseCall={() => setOverlay('surprise-call')}
+              onFinalClick={() => setOverlay('paris-modal')}
+              onParisClick={() => setOverlay('paris-modal')}
               finalTitle={config.final.title}
               finalEmoji={config.final.emoji}
             />
           </motion.div>
         )}
 
-        {phase === 'paris-modal' && (
+        {phase === 'final' && (
+          <motion.div key="final" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <FinalScreen
+              message={config.final.finalMessage}
+              subMessage={config.final.finalSubMessage}
+              recordingState={recordingState}
+              onStopRecording={stopRecording}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Overlays — rendered on top of map without unmounting it ── */}
+      <AnimatePresence>
+        {overlay === 'paris-modal' && (
           <motion.div
             key="paris-modal"
             initial={{ opacity: 0 }}
@@ -370,7 +403,7 @@ export default function Home() {
                 transition={{ delay: 0.75 }}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setPhase('roulette')}
+                onClick={() => setOverlay('roulette')}
                 style={{
                   width: '100%',
                   padding: '16px 24px',
@@ -391,26 +424,10 @@ export default function Home() {
           </motion.div>
         )}
 
-        {phase === 'roulette' && (
-          <RouletteScreen key="roulette" onDone={() => setPhase('surprise-call')} />
+        {overlay === 'roulette' && (
+          <RouletteScreen key="roulette" onDone={() => setOverlay('surprise-call')} />
         )}
 
-        {phase === 'surprise-call' && (
-          <motion.div key="surprise-call" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <SurpriseCall onCallEnded={() => setPhase('final')} />
-          </motion.div>
-        )}
-
-        {phase === 'final' && (
-          <motion.div key="final" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <FinalScreen
-              message={config.final.finalMessage}
-              subMessage={config.final.finalSubMessage}
-              recordingState={recordingState}
-              onStopRecording={stopRecording}
-            />
-          </motion.div>
-        )}
       </AnimatePresence>
     </main>
   );
