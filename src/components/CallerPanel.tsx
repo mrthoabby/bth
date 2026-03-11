@@ -403,6 +403,8 @@ function AdminInner() {
   }, [chatInput, room]);
 
   return (
+    <>
+    <RoomAudioRenderer />
     <div style={{ height: '100vh', background: '#060b14', display: 'flex', flexDirection: 'column', fontFamily: 'monospace', color: '#e8d0d8', overflow: 'hidden' }}>
 
       {/* Top bar */}
@@ -576,6 +578,7 @@ function AdminInner() {
         </AnimatePresence>
       </div>
     </div>
+    </>
   );
 }
 
