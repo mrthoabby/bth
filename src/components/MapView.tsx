@@ -510,9 +510,49 @@ function ImageMedia({ src, alt, onViewed }: { src: string; alt: string; onViewed
   );
 }
 
-function AutoViewed({ onViewed }: { onViewed: () => void }) {
-  useEffect(() => { onViewed(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  return null;
+function CallVideoCard({ label, onPlay }: { label?: string; onPlay: () => void }) {
+  const [clicked, setClicked] = useState(false);
+  const handlePlay = () => {
+    if (clicked) return;
+    setClicked(true);
+    onPlay();
+  };
+  return (
+    <div style={{ borderRadius: 12, overflow: 'hidden', background: '#050812', position: 'relative', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 240 }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0a0418, #050812, #0a0820)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 45%, rgba(215,95,115,0.1), transparent 65%)' }} />
+      <motion.button
+        whileHover={clicked ? {} : { scale: 1.1 }}
+        whileTap={clicked ? {} : { scale: 0.93 }}
+        onClick={handlePlay}
+        disabled={clicked}
+        style={{
+          position: 'relative',
+          width: 76, height: 76,
+          borderRadius: '50%',
+          background: clicked ? 'rgba(68,190,95,0.7)' : 'rgba(215,95,115,0.9)',
+          border: '2.5px solid rgba(255,255,255,0.28)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: clicked ? 'default' : 'pointer',
+          boxShadow: clicked
+            ? '0 0 0 14px rgba(68,190,95,0.12), 0 0 0 28px rgba(68,190,95,0.05)'
+            : '0 0 0 14px rgba(215,95,115,0.14), 0 0 0 28px rgba(215,95,115,0.06)',
+          outline: 'none',
+          transition: 'all 0.3s',
+        }}
+      >
+        {clicked
+          ? <span style={{ fontSize: 30 }}>✓</span>
+          : <div style={{ width: 0, height: 0, borderStyle: 'solid', borderWidth: '13px 0 13px 24px', borderColor: 'transparent transparent transparent #fff', marginLeft: 5 }} />
+        }
+      </motion.button>
+      {label && (
+        <p style={{ position: 'absolute', bottom: 14, left: 0, right: 0, textAlign: 'center', color: 'rgba(232,160,180,0.85)', fontSize: 13, fontStyle: 'italic', margin: 0, zIndex: 1 }}>
+          {label}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function ChallengeMedia({
@@ -573,7 +613,12 @@ function ChallengeMedia({
   }
 
   if (challenge.media.type === 'call') {
-    return <AutoViewed onViewed={() => { onViewed(); onSurpriseCall?.(); }} />;
+    return (
+      <CallVideoCard
+        label={challenge.media.label}
+        onPlay={() => { onViewed(); onSurpriseCall?.(); }}
+      />
+    );
   }
 
   return null;

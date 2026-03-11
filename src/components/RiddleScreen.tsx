@@ -122,7 +122,7 @@ export default function RiddleScreen({ riddle, title, onSolved, compact = false,
       </AnimatePresence>
 
       {isMultiple ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {options.map((opt, i) => (
             <motion.button
               key={opt}
@@ -134,18 +134,19 @@ export default function RiddleScreen({ riddle, title, onSolved, compact = false,
               whileHover={solved ? {} : { scale: 1.04, y: -1 }}
               whileTap={solved ? {} : { scale: 0.96 }}
               style={{
-                padding: '11px 8px',
+                padding: '16px 10px',
                 textAlign: 'center',
-                fontSize: compact ? 13 : 14,
-                fontWeight: 600,
-                color: solved ? 'rgba(180,230,190,0.5)' : 'rgba(210,255,220,0.95)',
-                background: solved ? 'rgba(12,36,20,0.3)' : 'rgba(14,44,24,0.75)',
-                border: `1.5px solid ${solved ? 'rgba(68,190,95,0.18)' : 'rgba(68,190,95,0.5)'}`,
-                borderRadius: 10,
+                fontSize: compact ? 16 : 17,
+                fontWeight: 700,
+                color: solved ? 'rgba(180,230,190,0.5)' : 'rgba(210,255,220,0.98)',
+                background: solved ? 'rgba(12,36,20,0.3)' : 'rgba(14,52,26,0.85)',
+                border: `2px solid ${solved ? 'rgba(68,190,95,0.18)' : 'rgba(68,190,95,0.6)'}`,
+                borderRadius: 12,
                 cursor: solved ? 'default' : 'pointer',
                 transition: 'all 0.15s',
-                boxShadow: solved ? 'none' : '0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(100,230,130,0.08)',
+                boxShadow: solved ? 'none' : '0 3px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(100,230,130,0.12)',
                 outline: 'none',
+                letterSpacing: '0.01em',
               }}
             >
               {opt}

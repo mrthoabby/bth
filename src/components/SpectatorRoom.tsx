@@ -171,9 +171,14 @@ function VideoGrid({ myName }: { myName: string }) {
   const camTracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
   const screenTracks = useTracks([Track.Source.ScreenShare], { onlySubscribed: false });
 
-  const remoteScreen = screenTracks.filter((t) => !t.participant.isLocal);
+  // birthday girl's screen or camera shown in main area
+  const birthdayScreen = screenTracks.find((t) => t.participant.identity.startsWith('birthday'));
+  const remoteScreen = birthdayScreen ? [birthdayScreen] : screenTracks.filter((t) => !t.participant.isLocal && t.participant.identity !== 'caller-person');
   const birthdayCam = camTracks.find((t) => t.participant.identity.startsWith('birthday'));
-  const spectatorCams = camTracks.filter((t) => !t.participant.identity.startsWith('birthday'));
+  // spectator cams: exclude birthday girl AND caller admin
+  const spectatorCams = camTracks.filter((t) =>
+    !t.participant.identity.startsWith('birthday') && t.participant.identity !== 'caller-person'
+  );
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden' }}>
@@ -299,9 +304,9 @@ function RoomInner({ myName }: { myName: string }) {
   const room = useRoomContext();
 
   useEffect(() => {
-    // Auto-enable camera and mic for spectators
+    // Camera on, mic OFF — spectators watch silently (chat only)
     room.localParticipant.setCameraEnabled(true).catch(() => {});
-    room.localParticipant.setMicrophoneEnabled(true).catch(() => {});
+    room.localParticipant.setMicrophoneEnabled(false).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

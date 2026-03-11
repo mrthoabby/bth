@@ -136,9 +136,15 @@ export default function RouletteScreen({ onDone }: Props) {
     } catch { /* ignore */ }
 
     const ac = acRef.current;
-    const next = rotation + 5 * 360; // always lands on segment 0
-    setRotation(next);
+
+    // Set spinning first so the transition property activates in the browser,
+    // then update rotation in the next painted frame so the browser animates it.
     setSpinning(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setRotation(r => r + 5 * 360);
+      });
+    });
 
     if (ac) {
       playDrone(ac);
@@ -221,7 +227,7 @@ export default function RouletteScreen({ onDone }: Props) {
           overflow: 'hidden',
           border: '3px solid rgba(255,255,255,0.2)',
           transform: `rotate(${rotation}deg)`,
-          transition: spinning ? `transform 4.2s cubic-bezier(0.17, 0.67, 0.12, 1)` : 'none',
+          transition: `transform ${spinning ? '4.2s cubic-bezier(0.17, 0.67, 0.12, 1)' : '0.001s linear'}`,
           willChange: 'transform',
         }}>
           <svg width={wheelSize} height={wheelSize} viewBox={`0 0 ${SZ} ${SZ}`}>
@@ -266,15 +272,15 @@ export default function RouletteScreen({ onDone }: Props) {
         </div>
       </motion.div>
 
-      {/* Legend — 2 column compact */}
+      {/* Legend */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
         style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px',
-          width: '100%', maxWidth: 320,
+          display: 'flex', flexDirection: 'column', gap: 8,
+          width: '100%', maxWidth: 340,
         }}>
         {UNIQUE_LABELS.map((seg) => (
-          <div key={seg.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'rgba(255,210,225,0.68)' }}>
-            <div style={{ width: 9, height: 9, borderRadius: 2, background: seg.color, flexShrink: 0 }} />
+          <div key={seg.label} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 600, color: 'rgba(255,225,235,0.92)' }}>
+            <div style={{ width: 13, height: 13, borderRadius: 3, background: seg.color, flexShrink: 0, boxShadow: `0 0 6px ${seg.color}88` }} />
             <span>{seg.emoji} {seg.label}</span>
           </div>
         ))}

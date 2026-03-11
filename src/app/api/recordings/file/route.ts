@@ -5,19 +5,30 @@ import path from 'path';
 export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
-  const name = req.nextUrl.searchParams.get('name');
-  if (!name || name.includes('..') || name.includes('/')) {
+  const name = req.nextUrl.searchParams.get('name') ?? '';
+  const session = req.nextUrl.searchParams.get('session') ?? '';
+
+  // Security: no path traversal
+  if (name.includes('..') || name.includes('/') || session.includes('..') || session.includes('/')) {
     return new NextResponse('Invalid', { status: 400 });
   }
-  const filePath = path.join(process.cwd(), 'uploads', name);
+
+  const UPLOADS = path.join(process.cwd(), 'uploads');
+  const filePath = session
+    ? path.join(UPLOADS, 'photos', session, name)
+    : path.join(UPLOADS, name);
+
   try {
     const data = await readFile(filePath);
-    const ext = name.endsWith('.mp4') ? 'mp4' : 'webm';
+    const isImage = /\.(jpe?g|png|webp)$/i.test(name);
+    const ext = name.split('.').pop()?.toLowerCase() ?? 'webm';
+    const mime = isImage
+      ? (ext === 'png' ? 'image/png' : 'image/jpeg')
+      : `video/${ext === 'mp4' ? 'mp4' : 'webm'}`;
     return new NextResponse(data, {
       headers: {
-        'Content-Type': `video/${ext}`,
+        'Content-Type': mime,
         'Content-Disposition': `inline; filename="${name}"`,
-        'Accept-Ranges': 'bytes',
       },
     });
   } catch {
