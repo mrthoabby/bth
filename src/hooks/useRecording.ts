@@ -16,6 +16,8 @@ function getBestMime() {
 export function useRecording() {
   const [state, setState] = useState<RecordingState>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [camStream, setCamStream] = useState<MediaStream | null>(null);
+  const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
 
   // Each track type gets its own recorder + chunk counter
   const camRecorderRef    = useRef<MediaRecorder | null>(null);
@@ -24,6 +26,8 @@ export function useRecording() {
   const sessionIdRef      = useRef<string>('');
   const camChunkRef       = useRef(0);
   const screenChunkRef    = useRef(0);
+  const camStreamRef      = useRef<MediaStream | null>(null);
+  const screenStreamRef   = useRef<MediaStream | null>(null);
 
   // ── Upload helpers ─────────────────────────────────────────────────────────
   const uploadChunk = useCallback(async (
@@ -86,6 +90,8 @@ export function useRecording() {
         video: true,
         audio: true,
       });
+      camStreamRef.current = camStream;
+      setCamStream(camStream);
       allStreamsRef.current = [camStream];
 
       // Camera recorder
@@ -111,6 +117,8 @@ export function useRecording() {
         selfBrowserSurface: 'exclude',
       } as DisplayMediaStreamOptions);
 
+      screenStreamRef.current = screenStream;
+      setScreenStream(screenStream);
       allStreamsRef.current.push(screenStream);
       screenRecorderRef.current = makeRecorder(
         screenStream,
@@ -167,5 +175,5 @@ export function useRecording() {
     return () => window.removeEventListener('beforeunload', handleUnload);
   }, [flushBeacon]);
 
-  return { state, error, start, stop, sessionId: sessionIdRef };
+  return { state, error, start, stop, sessionId: sessionIdRef, camStream, screenStream };
 }

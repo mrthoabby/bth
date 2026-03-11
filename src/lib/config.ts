@@ -2,10 +2,12 @@ export interface RiddleConfig {
   riddle: string;
   answer: string;
   hints: string[];
-  /** 'multiple' = elegir una opción; 'text' = escribir respuesta. */
-  type?: 'text' | 'multiple';
+  /** 'multiple' = elegir una opción; 'text' = escribir respuesta; 'fill' = completar blancos inline con {1} {2} en el texto. */
+  type?: 'text' | 'multiple' | 'fill';
   /** Opciones para tipo múltiple (una debe coincidir con answer al normalizar). */
   options?: string[];
+  /** Frase que aparece al responder correctamente, explicando el porqué. */
+  confirmationMessage?: string;
 }
 
 export interface StopMediaConfig {
@@ -14,6 +16,12 @@ export interface StopMediaConfig {
   src?: string;
   /** etiqueta opcional para mostrar en UI */
   label?: string;
+  /**
+   * Imagen que se muestra SIN difuminar durante el acertijo (contexto/pista visual).
+   * Al resolver, se reemplaza por el contenido normal (src).
+   * Exclusivo de islas enigma.
+   */
+  keyImage?: string;
 }
 
 export interface StopChallengeConfig {
@@ -35,6 +43,7 @@ export interface StopConfig {
 }
 
 export interface BirthdayConfig {
+  secretWord: string;
   intro: RiddleConfig;
   birthdayScene: {
     music: string;

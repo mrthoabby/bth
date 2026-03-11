@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { playShutter } from '@/lib/sounds';
 
 interface Props {
   title: string;
@@ -10,7 +11,7 @@ interface Props {
   onPhotoCaptured?: (photoDataUrl: string) => void;
 }
 
-type Step = 'loading' | 'countdown' | 'captured' | 'confirm' | 'collage';
+type Step = 'loading' | 'captured1' | 'captured2' | 'extra-preview' | 'confirm';
 
 async function buildCollage(photos: string[]): Promise<string> {
   const N = photos.length;
@@ -116,8 +117,145 @@ function dataURLtoBlob(dataUrl: string): Blob {
   return new Blob([arr], { type: mime });
 }
 
-function ConfirmView({ lastPhoto, saving, onContinue }: { lastPhoto: string | null; saving: boolean; onContinue: () => void }) {
-  const [lightbox, setLightbox] = useState(false);
+// ─── Photo lightbox (Facebook-style) ─────────────────────────────────────────
+function PhotoLightbox({ photos, index, onClose }: { photos: string[]; index: number; onClose: () => void }) {
+  const [current, setCurrent] = useState(index);
+  const hasPrev = current > 0;
+  const hasNext = current < photos.length - 1;
+
+  // keyboard nav
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft' && hasPrev) setCurrent((n) => n - 1);
+      if (e.key === 'ArrowRight' && hasNext) setCurrent((n) => n + 1);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [hasPrev, hasNext, onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.93)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        backdropFilter: 'blur(8px)',
+      }}
+    >
+      {/* Close */}
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute', top: 20, right: 24, zIndex: 10,
+          background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+          borderRadius: '50%', width: 40, height: 40, cursor: 'pointer',
+          color: '#fff', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >✕</button>
+
+      {/* Prev */}
+      {hasPrev && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setCurrent((n) => n - 1); }}
+          style={{
+            position: 'absolute', left: 16, zIndex: 10,
+            background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '50%', width: 48, height: 48, cursor: 'pointer',
+            color: '#fff', fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >‹</button>
+      )}
+
+      {/* Image */}
+      <AnimatePresence mode="wait">
+        <motion.img
+          key={current}
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.92 }}
+          transition={{ duration: 0.18 }}
+          src={photos[current]}
+          alt={`foto ${current + 1}`}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxWidth: 'min(92vw, 860px)', maxHeight: '86vh',
+            objectFit: 'contain', borderRadius: 8,
+            boxShadow: '0 24px 80px rgba(0,0,0,0.7)',
+            transform: 'scaleX(-1)',
+            cursor: 'default',
+          }}
+        />
+      </AnimatePresence>
+
+      {/* Next */}
+      {hasNext && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setCurrent((n) => n + 1); }}
+          style={{
+            position: 'absolute', right: 16, zIndex: 10,
+            background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '50%', width: 48, height: 48, cursor: 'pointer',
+            color: '#fff', fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >›</button>
+      )}
+
+      {/* Counter */}
+      <div style={{
+        position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)',
+        color: 'rgba(255,255,255,0.55)', fontSize: 13, fontFamily: '"Georgia",serif',
+      }}>
+        {current + 1} / {photos.length}
+      </div>
+
+      {/* Thumbnail row */}
+      {photos.length > 1 && (
+        <div style={{
+          position: 'absolute', bottom: 48, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', gap: 8,
+        }}>
+          {photos.map((src, i) => (
+            <div
+              key={i}
+              onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
+              style={{
+                width: 44, height: 44,
+                borderRadius: 4,
+                overflow: 'hidden',
+                border: i === current ? '2px solid rgba(212,168,64,0.9)' : '2px solid rgba(255,255,255,0.2)',
+                cursor: 'pointer',
+                opacity: i === current ? 1 : 0.55,
+                transition: 'all 0.15s',
+                flexShrink: 0,
+              }}
+            >
+              <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
+            </div>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Confirm view ─────────────────────────────────────────────────────────────
+function ConfirmView({
+  photos, saving, extrasTaken, maxExtras, onContinue, onTakeExtra,
+}: {
+  photos: string[];
+  saving: boolean;
+  extrasTaken: number;
+  maxExtras: number;
+  onContinue: () => void;
+  onTakeExtra: () => void;
+}) {
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const canTakeMore = extrasTaken < maxExtras;
 
   return (
     <div style={{
@@ -161,7 +299,7 @@ function ConfirmView({ lastPhoto, saving, onContinue }: { lastPhoto: string | nu
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, rgba(212,168,64,0.5), transparent)' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, rgba(212,168,64,0.5), transparent)' }} />
 
-        {/* Left: text + button */}
+        {/* Left: text + buttons */}
         <motion.div
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
@@ -184,107 +322,177 @@ function ConfirmView({ lastPhoto, saving, onContinue }: { lastPhoto: string | nu
           </h3>
           <p style={{
             fontSize: 13, color: 'rgba(212,168,64,0.6)', fontStyle: 'italic',
-            fontFamily: '"Georgia",serif', lineHeight: 1.7, marginBottom: 32,
+            fontFamily: '"Georgia",serif', lineHeight: 1.7, marginBottom: 28,
           }}>
             Guardando un recuerdo para la posteridad... 🌹
           </p>
-          <button
-            onClick={onContinue}
-            disabled={saving}
-            style={{
-              padding: '14px 32px',
-              background: 'linear-gradient(135deg, #9e5664, #7a3848)',
-              color: '#fdf5e4', border: 'none', borderRadius: 3,
-              fontSize: 15, fontFamily: '"Georgia",serif', letterSpacing: '0.06em',
-              cursor: saving ? 'default' : 'pointer',
-              boxShadow: '0 4px 20px rgba(100,30,50,0.4)',
-              alignSelf: 'flex-start',
-            }}
-          >
-            {saving ? 'Guardando...' : 'Continuar al mapa  ❤️'}
-          </button>
+
+          {/* Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button
+              onClick={onContinue}
+              disabled={saving}
+              style={{
+                padding: '14px 32px',
+                background: 'linear-gradient(135deg, #9e5664, #7a3848)',
+                color: '#fdf5e4', border: 'none', borderRadius: 3,
+                fontSize: 15, fontFamily: '"Georgia",serif', letterSpacing: '0.06em',
+                cursor: saving ? 'default' : 'pointer',
+                boxShadow: '0 4px 20px rgba(100,30,50,0.4)',
+                alignSelf: 'flex-start',
+              }}
+            >
+              {saving ? 'Guardando...' : 'Continuar al mapa  ❤️'}
+            </button>
+
+            {canTakeMore && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 6, alignSelf: 'flex-start' }}
+              >
+                {/* Arrow + button row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {/* Bouncing arrow indicator */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <motion.div
+                      animate={{ x: [0, 6, 0] }}
+                      transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}
+                      style={{ fontSize: 20, lineHeight: 1 }}
+                    >
+                      👉
+                    </motion.div>
+                    <motion.p
+                      animate={{ opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                      style={{
+                        fontSize: 9, color: 'rgba(212,168,64,0.9)', margin: 0,
+                        fontFamily: '"Georgia",serif', fontStyle: 'italic',
+                        whiteSpace: 'nowrap', letterSpacing: '0.04em',
+                      }}
+                    >
+                      ¡da clic!
+                    </motion.p>
+                  </div>
+
+                  <button
+                    onClick={onTakeExtra}
+                    disabled={saving}
+                    style={{
+                      padding: '11px 24px',
+                      background: 'transparent',
+                      color: 'rgba(212,168,64,0.8)',
+                      border: '1px solid rgba(212,168,64,0.35)',
+                      borderRadius: 3,
+                      fontSize: 13,
+                      fontFamily: '"Georgia",serif',
+                      letterSpacing: '0.05em',
+                      cursor: saving ? 'default' : 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 7,
+                    }}
+                  >
+                    📸 Tomar otra foto
+                    <span style={{ fontSize: 10, opacity: 0.65 }}>
+                      ({maxExtras - extrasTaken} más)
+                    </span>
+                  </button>
+                </div>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'flex-start',
+                  gap: 8,
+                  background: 'rgba(212,168,64,0.1)',
+                  border: '1px solid rgba(212,168,64,0.35)',
+                  borderRadius: 10,
+                  padding: '10px 14px',
+                  maxWidth: 280,
+                }}>
+                  <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.4 }}>🤭</span>
+                  <p style={{
+                    fontSize: 12,
+                    color: 'rgba(245,224,160,0.85)',
+                    fontStyle: 'italic',
+                    fontFamily: '"Georgia",serif',
+                    lineHeight: 1.55,
+                    margin: 0,
+                  }}>
+                    Te dejé espacio para <strong style={{ color: 'rgba(245,224,160,1)', fontStyle: 'normal' }}>{maxExtras} fotos más</strong> en tu galería, por si tienes una hermana o sobrina con la que quieras tomarte fotos
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </motion.div>
 
-        {/* Right: photo with hover zoom + click lightbox */}
-        {lastPhoto && (
-          <motion.div
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            style={{
-              width: 'clamp(220px, 38%, 340px)',
-              padding: '36px 32px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
+        {/* Right: photo strip — all photos, clickable */}
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          style={{
+            width: 'clamp(200px, 38%, 320px)',
+            padding: '28px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 14,
+          }}
+        >
+          {photos.map((src, i) => (
             <motion.div
-              whileHover={{ scale: 1.06, rotate: 1 }}
-              onClick={() => setLightbox(true)}
-              initial={{ rotate: -3 }}
-              animate={{ rotate: -2 }}
-              transition={{ type: 'spring', stiffness: 160, damping: 18 }}
+              key={i}
+              initial={{ opacity: 0, y: 10, rotate: i % 2 === 0 ? -3 : 2 }}
+              animate={{ opacity: 1, y: 0, rotate: i % 2 === 0 ? -2 : 1.5 }}
+              transition={{ delay: 0.1 + i * 0.12, type: 'spring', stiffness: 140 }}
+              whileHover={{ scale: 1.07, rotate: 0, zIndex: 10 }}
+              onClick={() => setLightboxIndex(i)}
               style={{
                 background: '#f8f5f2',
-                padding: '10px 10px 36px',
-                borderRadius: 5,
-                boxShadow: '0 8px 40px rgba(0,0,0,0.55)',
+                padding: '8px 8px 28px',
+                borderRadius: 4,
+                boxShadow: '0 6px 28px rgba(0,0,0,0.5)',
                 cursor: 'zoom-in',
+                position: 'relative',
+                width: '100%',
+                maxWidth: 200,
               }}
             >
               <img
-                src={lastPhoto}
-                alt="recuerdo"
-                style={{ width: '100%', maxWidth: 220, height: 170, objectFit: 'cover', borderRadius: 3, display: 'block', transform: 'scaleX(-1)' }}
+                src={src}
+                alt={`recuerdo ${i + 1}`}
+                style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 3, display: 'block', transform: 'scaleX(-1)' }}
               />
-              <p style={{ textAlign: 'center', marginTop: 8, fontSize: 10, color: 'rgba(60,40,30,0.5)', fontFamily: '"Georgia",serif', letterSpacing: '0.05em' }}>
-                toca para ver
+              <p style={{ textAlign: 'center', marginTop: 6, fontSize: 10, color: 'rgba(60,40,30,0.45)', fontFamily: '"Georgia",serif' }}>
+                📸 {i + 1}
               </p>
             </motion.div>
-          </motion.div>
-        )}
+          ))}
+          <p style={{ fontSize: 10, color: 'rgba(212,168,64,0.5)', fontStyle: 'italic', fontFamily: '"Georgia",serif', textAlign: 'center' }}>
+            toca para ampliar
+          </p>
+        </motion.div>
       </motion.div>
 
       {/* Lightbox */}
       <AnimatePresence>
-        {lightbox && lastPhoto && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setLightbox(false)}
-            style={{
-              position: 'fixed', inset: 0, zIndex: 999,
-              background: 'rgba(0,0,0,0.9)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'zoom-out',
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            <motion.img
-              initial={{ scale: 0.75, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.75, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 22 }}
-              src={lastPhoto}
-              alt="recuerdo"
-              style={{
-                maxWidth: '92vw', maxHeight: '88vh',
-                objectFit: 'contain',
-                borderRadius: 6,
-                boxShadow: '0 20px 80px rgba(0,0,0,0.8)',
-                transform: 'scaleX(-1)',
-              }}
-            />
-          </motion.div>
+        {lightboxIndex !== null && (
+          <PhotoLightbox
+            photos={photos}
+            index={lightboxIndex}
+            onClose={() => setLightboxIndex(null)}
+          />
         )}
       </AnimatePresence>
     </div>
   );
 }
 
+// ─── Main component ────────────────────────────────────────────────────────────
 export default function PhotoSession({ title, subtitle, totalPhotos, onContinue, onPhotoCaptured }: Props) {
-  const sessionTotalPhotos = 1;
   void totalPhotos;
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -292,56 +500,15 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
 
   const [step, setStep] = useState<Step>('loading');
   const [photos, setPhotos] = useState<string[]>([]);
-  const [countdown, setCountdown] = useState(3);
   const [flash, setFlash] = useState(false);
   const [lastPhoto, setLastPhoto] = useState<string | null>(null);
   const [collageUrl, setCollageUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-
-  // Start camera and capture automatically (no 3-2-1 overlay)
-  useEffect(() => {
-    let active = true;
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
-      .then((stream) => {
-        if (!active) { stream.getTracks().forEach((t) => t.stop()); return; }
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(() => {});
-        }
-
-        // Give camera a brief warmup, then boom capture.
-        setTimeout(() => {
-          if (!active) return;
-          setFlash(true);
-          setTimeout(() => setFlash(false), 350);
-
-          const dataUrl = capturePhoto();
-          if (!dataUrl) return;
-
-          setLastPhoto(dataUrl);
-          setStep('captured');
-          onPhotoCaptured?.(dataUrl);
-          const next = [dataUrl];
-          setPhotos(next);
-
-          buildCollage(next).then((url) => {
-            setCollageUrl(url);
-            // Stay in 'captured' a bit so the polaroid message can be read, then confirm
-            setTimeout(() => setStep('confirm'), 2800);
-          });
-        }, 900);
-      })
-      .catch(console.error);
-    return () => {
-      active = false;
-      if (timerRef.current) clearInterval(timerRef.current);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [extrasTaken, setExtrasTaken] = useState(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const MAX_EXTRAS = 3;
+  const photo1Ref = useRef<string | null>(null);
 
   const capturePhoto = useCallback((): string | null => {
     const video = videoRef.current;
@@ -358,6 +525,45 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
     return canvas.toDataURL('image/jpeg', 0.9);
   }, []);
 
+  // Start camera and run the auto-capture sequence
+  useEffect(() => {
+    let active = true;
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
+      .then((stream) => {
+        if (!active) { stream.getTracks().forEach((t) => t.stop()); return; }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+
+        // Warmup → first surprise capture
+        setTimeout(() => {
+          if (!active) return;
+
+          // Flash + capture photo 1
+          playShutter(); setFlash(true);
+          setTimeout(() => setFlash(false), 350);
+          const photo1 = capturePhoto();
+          if (!photo1) return;
+
+          setLastPhoto(photo1);
+          setPhotos([photo1]);
+          photo1Ref.current = photo1;
+          onPhotoCaptured?.(photo1);
+          setStep('captured1'); // wait for user to click "Continuar"
+        }, 900);
+      })
+      .catch(console.error);
+
+    return () => {
+      active = false;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSave = useCallback(async (photoList: string[], collage: string | null) => {
     setSaving(true);
@@ -386,95 +592,56 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
     onContinue();
   }, [saved, handleSave, photos, collageUrl, onContinue]);
 
-  // ── CONFIRM VIEW ─────────────────────────────────────────────────────────
-  if (step === 'confirm') {
-    return (
-      <ConfirmView
-        lastPhoto={lastPhoto}
-        saving={saving}
-        onContinue={handleContinue}
-      />
-    );
-  }
+  // Triggered when user taps "Continuar" on the first captured overlay
+  const handleSurprise2 = useCallback(() => {
+    playShutter(); setFlash(true);
+    setTimeout(() => setFlash(false), 350);
+    const photo2 = capturePhoto();
+    const p1 = photo1Ref.current;
+    const nextPhotos = photo2 ? (p1 ? [p1, photo2] : [photo2]) : (p1 ? [p1] : []);
 
-  // ── COLLAGE VIEW ─────────────────────────────────────────────────────────
-  if (step === 'collage') {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, textAlign: 'center' }}
-      >
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 80 }}>
-          <div style={{ fontSize: 48, marginBottom: 8 }}>🎞️</div>
-          <h2 className="serif" style={{ fontSize: 26, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
-            ¡Tus recuerdos!
-          </h2>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 24 }}>
-            Así te verás siempre en mi memoria 💕
-          </p>
-        </motion.div>
+    if (photo2) {
+      setLastPhoto(photo2);
+      setPhotos(nextPhotos);
+      onPhotoCaptured?.(photo2);
+    }
+    setStep('captured2');
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, justifyContent: 'center', marginBottom: 28, maxWidth: 700 }}>
-          {photos.map((src, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 30, rotate: (i % 2 === 0 ? -3 : 3) }}
-              animate={{ opacity: 1, y: 0, rotate: (i % 2 === 0 ? -2 : 2) }}
-              transition={{ delay: i * 0.12, type: 'spring', stiffness: 90 }}
-              style={{
-                background: 'var(--surface-mid)',
-                border: '1px solid var(--border)',
-                borderRadius: 12,
-                padding: '10px 10px 28px',
-                boxShadow: '0 4px 20px rgba(44, 36, 40, 0.08)',
-                width: 180,
-              }}
-            >
-              <img
-                src={src}
-                alt={`Foto ${i + 1}`}
-                style={{ width: '100%', borderRadius: 12, display: 'block', transform: 'scaleX(-1)' }}
-              />
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, textAlign: 'center' }}>
-                📸 Recuerdo {i + 1}
-              </p>
-            </motion.div>
-          ))}
-        </div>
+    timerRef.current = setTimeout(() => {
+      buildCollage(nextPhotos).then((url) => setCollageUrl(url));
+      setStep('confirm');
+    }, 5000);
+  }, [capturePhoto, onPhotoCaptured]);
 
-        {collageUrl && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} style={{ marginBottom: 24 }}>
-            <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: 10 }}>
-              Collage completo
-            </p>
-            <img
-              src={collageUrl}
-              alt="Collage"
-              style={{ maxWidth: 360, width: '100%', borderRadius: 16, border: '1px solid var(--border)', boxShadow: '0 4px 24px rgba(44, 36, 40, 0.08)' }}
-            />
-          </motion.div>
-        )}
+  // Take an extra photo — 3-second countdown then capture
+  const handleTakeExtra = useCallback(() => {
+    setStep('extra-preview');
+    setCountdown(3);
+    setTimeout(() => setCountdown(2), 1000);
+    setTimeout(() => setCountdown(1), 2000);
+    setTimeout(() => {
+      setCountdown(null);
+      playShutter(); setFlash(true);
+      setTimeout(() => setFlash(false), 350);
+      const dataUrl = capturePhoto();
+      if (dataUrl) {
+        setLastPhoto(dataUrl);
+        onPhotoCaptured?.(dataUrl);
+        setPhotos((prev) => {
+          const next = [...prev, dataUrl];
+          buildCollage(next).then(setCollageUrl);
+          return next;
+        });
+        setExtrasTaken((n) => n + 1);
+      }
+      setTimeout(() => setStep('confirm'), 2200);
+    }, 3000);
+  }, [capturePhoto, onPhotoCaptured]);
 
-        <motion.button
-          className="btn-rose"
-          style={{ fontSize: 16, paddingLeft: 36, paddingRight: 36, paddingTop: 14, paddingBottom: 14 }}
-          onClick={handleContinue}
-          disabled={saving}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          {saving ? '💾 Guardando...' : saved ? 'Continuar mi aventura ❤️' : '¡Guardar y continuar! 🗺️'}
-        </motion.button>
-      </motion.div>
-    );
-  }
-
-  // ── CAMERA VIEW (loading / countdown / captured) ──────────────────────────
-  const photosTaken = photos.length;
-  const isLastPhoto = photosTaken >= sessionTotalPhotos;
-
+  // ── RENDER: camera view always mounted so the stream stays attached.
+  //    ConfirmView overlays on top (position: fixed) when step === 'confirm'.
   return (
+    <>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -525,49 +692,21 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
           )}
         </AnimatePresence>
 
-        {/* Countdown overlay */}
+        {/* captured1 overlay — "te cogí desprevenida..." + Continuar button */}
         <AnimatePresence>
-          {step === 'countdown' && countdown > 0 && (
+          {step === 'captured1' && lastPhoto && (
             <motion.div
-              key={countdown}
-              initial={{ scale: 1.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.3, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(0,0,0,0.18)',
-              }}
-            >
-              <span style={{
-                fontSize: 120, fontWeight: 900, color: 'white',
-                textShadow: '0 4px 24px rgba(0,0,0,0.4)', lineHeight: 1,
-              }}>
-                {countdown}
-              </span>
-              <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16, marginTop: 8, fontWeight: 500 }}>
-                Iniciando...
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Shot taken overlay — show the captured photo */}
-        <AnimatePresence>
-          {step === 'captured' && lastPhoto && (
-            <motion.div
-              initial={{ opacity: 0, scale: 1.04 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
               style={{
                 position: 'absolute', inset: 0,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(0,0,0,0.55)',
+                background: 'rgba(0,0,0,0.60)',
+                gap: 16,
+                padding: '24px 16px',
               }}
             >
-              {/* Polaroid frame */}
               <motion.div
                 initial={{ scale: 0.45, rotate: -10 }}
                 animate={{ scale: [0.45, 1.3, 1.02], rotate: [-10, 5, -1] }}
@@ -577,63 +716,237 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
                   padding: '14px 14px 46px',
                   borderRadius: 12,
                   boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
-                  maxWidth: 320,
+                  maxWidth: 260,
                 }}
               >
-                <img
-                  src={lastPhoto}
-                  alt="foto"
-                  style={{ width: '100%', borderRadius: 4, display: 'block', transform: 'scaleX(-1)' }}
-                />
+                <img src={lastPhoto} alt="foto" style={{ width: '100%', borderRadius: 4, display: 'block', transform: 'scaleX(-1)' }} />
               </motion.div>
 
-              <motion.p
-                initial={{ opacity: 0, y: 8 }}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.5 }}
                 style={{
-                  marginTop: 18,
-                  color: '#f5e8cc',
-                  fontWeight: 400,
-                  fontSize: 17,
-                  fontStyle: 'italic',
-                  fontFamily: '"Playfair Display","Georgia",serif',
-                  textShadow: '0 2px 12px rgba(0,0,0,0.6)',
-                  maxWidth: 380,
-                  lineHeight: 1.5,
+                  textAlign: 'center', maxWidth: 360,
+                  background: 'rgba(10,4,8,0.72)',
+                  border: '1px solid rgba(255,255,255,0.13)',
+                  borderRadius: 14,
+                  padding: '18px 24px',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.45)',
                 }}
               >
-                {isLastPhoto
-                  ? 'Guardando un recuerdo para la posteridad... 🌹'
-                  : 'Preparada tu mejor sonrisa 😊'}
-              </motion.p>
+                <p style={{
+                  color: '#f5e8cc',
+                  fontSize: 20,
+                  fontWeight: 700,
+                  fontFamily: '"Playfair Display","Georgia",serif',
+                  marginBottom: 8,
+                }}>
+                  Te cogí desprevenida 🤭 ?? WOW LO SIENTO
+                </p>
+                {/* Pulsing hint text */}
+                <motion.p
+                  animate={{ opacity: [0.6, 1, 0.6] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{
+                    color: 'rgba(212,168,64,0.95)',
+                    fontSize: 14,
+                    fontStyle: 'italic',
+                    fontFamily: '"Georgia",serif',
+                    marginBottom: 18,
+                  }}
+                >
+                  Pero relax ya tendrás oportunidad para otra foto... por ahora solo da click en continuar ✨
+                </motion.p>
+
+                {/* Continuar button */}
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.88 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.0, type: 'spring', stiffness: 180 }}
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleSurprise2}
+                  style={{
+                    padding: '13px 36px',
+                    background: 'linear-gradient(135deg, rgba(175,55,78,0.9), rgba(135,38,58,0.9))',
+                    color: '#fdf5e4',
+                    border: '1.5px solid rgba(215,95,115,0.5)',
+                    borderRadius: 6,
+                    fontSize: 15,
+                    fontFamily: '"Georgia",serif',
+                    letterSpacing: '0.06em',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 20px rgba(175,55,78,0.45)',
+                  }}
+                >
+                  Continuar →
+                </motion.button>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Counter badge */}
-        <div style={{
-          position: 'absolute', top: 12, right: 12,
-          background: 'rgba(255,255,255,0.85)',
-          borderRadius: 50, padding: '4px 12px',
-          fontSize: 13, fontWeight: 600, color: 'var(--text)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(168, 93, 107, 0.2)',
-        }}>
-          {photosTaken} / {sessionTotalPhotos}
-        </div>
+        {/* captured2 overlay — "jajaja esta solo por si acaso" */}
+        <AnimatePresence>
+          {step === 'captured2' && lastPhoto && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(0,0,0,0.60)',
+                gap: 14,
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.5, rotate: 8 }}
+                animate={{ scale: [0.5, 4.25, 1.0], rotate: [8, -4, 2] }}
+                transition={{ duration: 0.55, ease: 'easeOut' }}
+                style={{
+                  background: '#f8f5f2',
+                  padding: '14px 14px 46px',
+                  borderRadius: 12,
+                  boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
+                  maxWidth: 280,
+                }}
+              >
+                <img src={lastPhoto} alt="foto" style={{ width: '100%', borderRadius: 4, display: 'block', transform: 'scaleX(-1)' }} />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+                style={{
+                  textAlign: 'center', maxWidth: 360,
+                  background: 'rgba(10,4,8,0.72)',
+                  border: '1px solid rgba(255,255,255,0.13)',
+                  borderRadius: 14,
+                  padding: '16px 28px',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.45)',
+                }}
+              >
+                <p style={{
+                  color: '#f5e8cc',
+                  fontSize: 22,
+                  fontWeight: 700,
+                  fontFamily: '"Playfair Display","Georgia",serif',
+                  marginBottom: 6,
+                }}>
+                  jajaja 😂
+                </p>
+                <p style={{
+                  color: 'rgba(212,168,64,0.95)',
+                  fontSize: 14,
+                  fontStyle: 'italic',
+                  fontFamily: '"Georgia",serif',
+                }}>
+                 ESPERA, Yesss, solo quería una foto extra... esta solo por si acaso...
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* extra-preview overlay — countdown then photo */}
+        <AnimatePresence>
+          {step === 'extra-preview' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(0,0,0,0.65)',
+                gap: 14,
+              }}
+            >
+              <AnimatePresence mode="wait">
+                {countdown !== null ? (
+                  /* Countdown number */
+                  <motion.div
+                    key={countdown}
+                    initial={{ scale: 1.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.5, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    style={{
+                      fontSize: 130,
+                      fontWeight: 900,
+                      color: 'rgba(245,232,204,0.95)',
+                      textShadow: '0 0 60px rgba(212,168,64,0.55)',
+                      fontFamily: '"Georgia",serif',
+                      lineHeight: 1,
+                      userSelect: 'none',
+                    }}
+                  >
+                    {countdown}
+                  </motion.div>
+                ) : lastPhoto ? (
+                  /* Captured photo */
+                  <motion.div
+                    key="photo"
+                    initial={{ scale: 0.5, rotate: -6, opacity: 0 }}
+                    animate={{ scale: [0.5, 1.2, 1.0], rotate: [-6, 3, -1], opacity: 1 }}
+                    transition={{ duration: 0.55, ease: 'easeOut' }}
+                    style={{
+                      background: '#f8f5f2',
+                      padding: '14px 14px 46px',
+                      borderRadius: 12,
+                      boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
+                      maxWidth: 280,
+                    }}
+                  >
+                    <img src={lastPhoto} alt="foto" style={{ width: '100%', borderRadius: 4, display: 'block', transform: 'scaleX(-1)' }} />
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+
+              {countdown === null && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  style={{
+                    background: 'rgba(10,4,8,0.72)',
+                    border: '1px solid rgba(255,255,255,0.13)',
+                    borderRadius: 12,
+                    padding: '12px 24px',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.45)',
+                  }}
+                >
+                  <p style={{
+                    color: '#f5e8cc', fontSize: 17, fontStyle: 'italic',
+                    fontFamily: '"Playfair Display","Georgia",serif',
+                    margin: 0,
+                  }}>
+                    ¡Guardando tu recuerdo! 🌹
+                  </p>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Status label */}
       <motion.p
-        key={`${step}-${photosTaken}`}
+        key={step}
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         style={{ fontSize: 14, color: 'rgba(245,232,204,0.5)', marginBottom: 12, fontFamily: '"Georgia",serif', fontStyle: 'italic' }}
       >
         {step === 'loading' && 'Iniciando...'}
-        {step === 'countdown' && countdown > 0 && `📷 Foto ${photosTaken + 1} de ${sessionTotalPhotos}`}
-        {step === 'captured' && `✓ Foto ${photosTaken} guardada`}
+        {step === 'captured1' && '📷 Foto guardada'}
+        {step === 'captured2' && '📷 Segunda foto guardada'}
+        {step === 'extra-preview' && '📷 Guardando foto extra...'}
       </motion.p>
 
       {/* Thumbnail strip */}
@@ -667,5 +980,28 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
     </motion.div>
+
+    {/* ConfirmView overlays on top — video stays mounted so capturePhoto() always works */}
+    <AnimatePresence>
+      {step === 'confirm' && (
+        <motion.div
+          key="confirm-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{ position: 'fixed', inset: 0, zIndex: 50 }}
+        >
+          <ConfirmView
+            photos={photos}
+            saving={saving}
+            extrasTaken={extrasTaken}
+            maxExtras={MAX_EXTRAS}
+            onContinue={handleContinue}
+            onTakeExtra={handleTakeExtra}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 }

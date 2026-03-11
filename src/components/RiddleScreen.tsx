@@ -2,6 +2,7 @@
 import { useState, KeyboardEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RiddleConfig } from '@/lib/config';
+import { playCorrect, playWrong } from '@/lib/sounds';
 
 interface Props {
   riddle: RiddleConfig;
@@ -14,23 +15,33 @@ interface Props {
 function normalize(s: string) {
   return s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
+function normalizeStrict(s: string) {
+  return normalize(s).replace(/[^a-z0-9]/g, '');
+}
 
 export default function RiddleScreen({ riddle, title, onSolved, compact = false, onFirstTrySolve }: Props) {
   const [answer, setAnswer] = useState('');
+  const [fill1, setFill1] = useState('');
+  const [fill2, setFill2] = useState('');
   const [wrong, setWrong] = useState(false);
   const [hintsShown, setHintsShown] = useState(0);
   const [solved, setSolved] = useState(false);
   const [hadWrongAnswer, setHadWrongAnswer] = useState(false);
 
   const isMultiple = (riddle.type === 'multiple' && riddle.options?.length) ? true : false;
+  const isFill = riddle.type === 'fill';
   const options = riddle.options ?? [];
 
   const checkAnswer = (selected: string) => {
-    if (normalize(selected) === normalize(riddle.answer)) {
+    const isCorrect = normalize(selected) === normalize(riddle.answer)
+      || normalizeStrict(selected) === normalizeStrict(riddle.answer);
+    if (isCorrect) {
+      playCorrect();
       setSolved(true);
       if (!hadWrongAnswer && onFirstTrySolve) setTimeout(onFirstTrySolve, 500);
       setTimeout(onSolved, 800);
     } else {
+      playWrong();
       setHadWrongAnswer(true);
       setWrong(true);
       setTimeout(() => setWrong(false), 500);
@@ -38,7 +49,10 @@ export default function RiddleScreen({ riddle, title, onSolved, compact = false,
     }
   };
 
-  const handleSubmit = () => { if (!isMultiple) checkAnswer(answer); };
+  const handleSubmit = () => {
+    if (isFill) checkAnswer(fill1.trim() + ' y ' + fill2.trim());
+    else if (!isMultiple) checkAnswer(answer);
+  };
   const handleKey = (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === 'Enter') handleSubmit(); };
 
   const inner = (
@@ -65,12 +79,32 @@ export default function RiddleScreen({ riddle, title, onSolved, compact = false,
         <div style={{ position: 'absolute', bottom: -2, left: -2, width: 9, height: 9, borderBottom: '2.5px solid rgba(100,230,130,0.85)', borderLeft: '2.5px solid rgba(100,230,130,0.85)', borderRadius: '0 0 0 3px' }} />
         <div style={{ position: 'absolute', bottom: -2, right: -2, width: 9, height: 9, borderBottom: '2.5px solid rgba(100,230,130,0.85)', borderRight: '2.5px solid rgba(100,230,130,0.85)', borderRadius: '0 0 3px 0' }} />
 
-        <motion.p
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
-          style={{ fontSize: compact ? 15 : 18, color: '#c8ffd8', lineHeight: 1.7, margin: 0, fontStyle: 'italic', fontWeight: 400 }}
-        >
-          &ldquo;{riddle.riddle}&rdquo;
-        </motion.p>
+        {isFill ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+            style={{ fontSize: compact ? 14 : 17, color: '#c8ffd8', lineHeight: 1.85, margin: 0, fontStyle: 'italic', fontWeight: 400 }}>
+            {riddle.riddle.split(/(\{1\}|\{2\}|\n)/g).map((part, i) => {
+              if (part === '{1}') return (
+                <input key="f1" type="text" value={fill1} onChange={e => setFill1(e.target.value)}
+                  onKeyDown={handleKey} disabled={solved} autoCapitalize="none"
+                  style={{ display: 'inline-block', width: 110, padding: '2px 8px', margin: '0 4px', borderRadius: 6, border: '1.5px solid rgba(68,190,95,0.65)', background: 'rgba(10,50,22,0.85)', color: '#b8ffcc', fontSize: compact ? 13 : 15, fontStyle: 'normal', outline: 'none', verticalAlign: 'middle' }} />
+              );
+              if (part === '{2}') return (
+                <input key="f2" type="text" value={fill2} onChange={e => setFill2(e.target.value)}
+                  onKeyDown={handleKey} disabled={solved} autoCapitalize="none"
+                  style={{ display: 'inline-block', width: 110, padding: '2px 8px', margin: '0 4px', borderRadius: 6, border: '1.5px solid rgba(68,190,95,0.65)', background: 'rgba(10,50,22,0.85)', color: '#b8ffcc', fontSize: compact ? 13 : 15, fontStyle: 'normal', outline: 'none', verticalAlign: 'middle' }} />
+              );
+              if (part === '\n') return <br key={i} />;
+              return <span key={i}>{part}</span>;
+            })}
+          </motion.div>
+        ) : (
+          <motion.p
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+            style={{ fontSize: compact ? 15 : 18, color: '#c8ffd8', lineHeight: 1.7, margin: 0, fontStyle: 'italic', fontWeight: 400, whiteSpace: 'pre-line' }}
+          >
+            &ldquo;{riddle.riddle}&rdquo;
+          </motion.p>
+        )}
       </div>
 
       <AnimatePresence>
@@ -118,6 +152,36 @@ export default function RiddleScreen({ riddle, title, onSolved, compact = false,
             </motion.button>
           ))}
         </div>
+      ) : isFill ? (
+        /* fill type: inputs are inline in the riddle box; only show submit button here */
+        <AnimatePresence mode="wait">
+          {solved ? (
+            <motion.div key="ok" initial={{ scale: 0 }} animate={{ scale: 1 }}
+              style={{ textAlign: 'center', fontSize: 28, padding: '8px 0', color: 'var(--rose-deep)' }}>✓</motion.div>
+          ) : (
+            <motion.button
+              key="btn-fill"
+              onClick={handleSubmit}
+              disabled={!fill1.trim() || !fill2.trim()}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                width: '100%', padding: '13px 20px',
+                background: (fill1.trim() && fill2.trim())
+                  ? 'linear-gradient(135deg, rgba(175,55,78,0.92), rgba(135,38,58,0.92))'
+                  : 'rgba(55,28,38,0.5)',
+                border: `1.5px solid ${(fill1.trim() && fill2.trim()) ? 'rgba(215,95,115,0.65)' : 'rgba(110,55,65,0.3)'}`,
+                borderRadius: 12,
+                color: (fill1.trim() && fill2.trim()) ? '#fff' : 'rgba(190,140,155,0.45)',
+                fontSize: 14, fontWeight: 700,
+                cursor: (fill1.trim() && fill2.trim()) ? 'pointer' : 'default',
+                boxShadow: (fill1.trim() && fill2.trim()) ? '0 4px 16px rgba(175,55,78,0.38)' : 'none',
+                transition: 'all 0.2s', letterSpacing: '0.04em', outline: 'none',
+              }}
+            >
+              Responder →
+            </motion.button>
+          )}
+        </AnimatePresence>
       ) : (
         <>
           <motion.div animate={wrong ? { x: [-5, 5, -4, 4, -2, 2, 0] } : {}} transition={{ duration: 0.32 }}>
@@ -161,9 +225,42 @@ export default function RiddleScreen({ riddle, title, onSolved, compact = false,
         </>
       )}
 
-      {solved && isMultiple && (
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-          style={{ textAlign: 'center', fontSize: 28, padding: '12px 0', color: 'var(--rose-deep)' }}>✓</motion.div>
+      {solved && (
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          style={{ marginTop: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          {isMultiple && (
+            <motion.span
+              initial={{ scale: 0 }} animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 14 }}
+              style={{ fontSize: 28, color: '#4ecb71' }}
+            >✓</motion.span>
+          )}
+          {riddle.confirmationMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+              style={{
+                borderLeft: '3px solid rgba(215,95,115,0.8)',
+                borderRadius: 8,
+                padding: '10px 14px',
+                background: 'linear-gradient(135deg, rgba(120,30,50,0.45), rgba(80,15,30,0.5))',
+                boxShadow: '0 2px 12px rgba(175,55,78,0.25)',
+                width: '100%',
+              }}
+            >
+              <p style={{
+                fontSize: 13,
+                color: 'rgba(255,210,220,0.95)',
+                fontStyle: 'italic',
+                textAlign: 'left',
+                lineHeight: 1.65,
+                margin: 0,
+                fontWeight: 400,
+              }}>
+                {riddle.confirmationMessage}
+              </p>
+            </motion.div>
+          )}
+        </motion.div>
       )}
 
       {wrong && (

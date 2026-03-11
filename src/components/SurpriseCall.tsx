@@ -1,9 +1,8 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   LiveKitRoom,
-  VideoConference,
   useRoomContext,
   useTracks,
   VideoTrack,
@@ -15,18 +14,12 @@ interface Props {
   onCallEnded: () => void;
 }
 
-// Inner component that uses LiveKit room context
-function CallView({ onCallEnded }: { onCallEnded: () => void }) {
+// Inner component — looks like a video player, never reveals it's a live call
+function VideoView({ onCallEnded }: { onCallEnded: () => void }) {
   const room = useRoomContext();
-  const [callerConnected, setCallerConnected] = useState(false);
 
-  // Watch for the caller participant (non-local)
-  const tracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
-  const remoteTracks = tracks.filter((t) => !t.participant.isLocal);
-
-  useEffect(() => {
-    if (remoteTracks.length > 0) setCallerConnected(true);
-  }, [remoteTracks]);
+  const remoteTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
+    .filter((t) => !t.participant.isLocal);
 
   const handleEnd = useCallback(() => {
     room.disconnect();
@@ -39,73 +32,69 @@ function CallView({ onCallEnded }: { onCallEnded: () => void }) {
   }, [room, onCallEnded]);
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen p-4">
-      <motion.h2
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-2xl font-bold glow-text mb-4 text-center"
-        style={{ color: 'var(--rose-light)' }}
-      >
-        🎁 Tu último regalo...
-      </motion.h2>
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 500,
+      background: 'rgba(4,2,10,0.88)',
+      backdropFilter: 'blur(12px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 20,
+    }}>
+      <div style={{
+        width: '100%', maxWidth: 760,
+        borderRadius: 20, overflow: 'hidden',
+        boxShadow: '0 8px 60px rgba(0,0,0,0.85), 0 0 0 1.5px rgba(215,95,115,0.25)',
+        background: '#050812',
+        position: 'relative',
+        aspectRatio: '16/9',
+      }}>
 
-      {!callerConnected && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-rose-300 text-center mb-6 animate-pulse"
-        >
-          Conectando... un momento especial está llegando ✨
-        </motion.p>
-      )}
-
-      {/* Remote video (the caller) */}
-      <div
-        className="rounded-2xl overflow-hidden w-full max-w-2xl mb-6"
-        style={{
-          minHeight: 320,
-          background: '#0d0508',
-          boxShadow: '0 0 60px rgba(232,69,90,0.3)',
-          border: '1px solid rgba(232,69,90,0.4)',
-        }}
-      >
+        {/* "Video" content — caller's camera only */}
         {remoteTracks[0] ? (
           <VideoTrack
             trackRef={remoteTracks[0]}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 16 }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         ) : (
-          <div className="flex items-center justify-center h-80 text-rose-400 text-lg">
-            <span className="animate-pulse">Esperando conexión...</span>
+          /* Buffering state — looks like a video loading */
+          <div style={{
+            width: '100%', height: '100%',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: 20, background: '#050812',
+          }}>
+            <motion.div
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+              style={{ fontSize: 56 }}
+            >
+              🌹
+            </motion.div>
+            <div style={{ width: 200, height: 3, background: 'rgba(255,255,255,0.12)', borderRadius: 99, overflow: 'hidden', position: 'relative' }}>
+              <motion.div
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+                style={{ position: 'absolute', inset: 0, background: 'rgba(232,69,90,0.6)', borderRadius: 99 }}
+              />
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Local camera (small) */}
-      <div
-        className="absolute bottom-24 right-6 rounded-xl overflow-hidden"
-        style={{ width: 120, height: 90, border: '2px solid var(--rose)', zIndex: 10 }}
-      >
-        {tracks
-          .filter((t) => t.participant.isLocal)
-          .slice(0, 1)
-          .map((t) => (
-            <VideoTrack
-              key={t.publication?.trackSid}
-              trackRef={t}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ))}
+        {/* Invisible close — only appears on hover, no call language */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0 }}
+          whileHover={{ opacity: 0.6 }}
+          onClick={handleEnd}
+          style={{
+            position: 'absolute', top: 16, right: 16,
+            background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 8, padding: '6px 14px',
+            color: 'rgba(255,255,255,0.7)', fontSize: 13, cursor: 'pointer',
+          }}
+        >
+          ✕
+        </motion.button>
       </div>
-
-      <motion.button
-        className="btn-rose px-8 py-3 mt-4"
-        onClick={handleEnd}
-        whileHover={{ scale: 1.05 }}
-        style={{ background: 'linear-gradient(135deg,#444,#666)' }}
-      >
-        Terminar llamada
-      </motion.button>
     </div>
   );
 }
@@ -117,30 +106,17 @@ export default function SurpriseCall({ onCallEnded }: Props) {
   const [connecting, setConnecting] = useState(true);
 
   useEffect(() => {
-    async function connect() {
-      try {
-        const res = await fetch('/api/livekit-token?role=birthday');
-        if (!res.ok) throw new Error('No se pudo obtener el token');
-        const data = await res.json();
-        setToken(data.token);
-        setServerUrl(data.url);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error de conexión');
-      } finally {
-        setConnecting(false);
-      }
-    }
-    connect();
+    fetch('/api/livekit-token?role=birthday')
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
+      .then((d) => { setToken(d.token); setServerUrl(d.url); })
+      .catch(() => setError('Error al conectar'))
+      .finally(() => setConnecting(false));
   }, []);
 
   if (connecting) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-          className="text-5xl"
-        >
+      <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.6 }} style={{ fontSize: 56 }}>
           🌹
         </motion.div>
       </div>
@@ -149,28 +125,18 @@ export default function SurpriseCall({ onCallEnded }: Props) {
 
   if (error || !token) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-rose-400 text-lg">{error || 'Error al conectar'}</p>
-        <p className="text-rose-300 text-sm opacity-70">
-          Asegúrate de configurar las variables de entorno de LiveKit.
-        </p>
-        <button className="btn-rose" onClick={onCallEnded}>
-          Continuar de todas formas
+      <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: '#050812', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <p style={{ color: 'rgba(232,69,90,0.8)' }}>{error}</p>
+        <button style={{ padding: '10px 24px', background: 'rgba(175,55,78,0.8)', border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer' }} onClick={onCallEnded}>
+          Continuar
         </button>
       </div>
     );
   }
 
   return (
-    <LiveKitRoom
-      token={token}
-      serverUrl={serverUrl}
-      connect={true}
-      video={true}
-      audio={true}
-      style={{ minHeight: '100vh' }}
-    >
-      <CallView onCallEnded={onCallEnded} />
+    <LiveKitRoom token={token} serverUrl={serverUrl} connect video={true} audio={true}>
+      <VideoView onCallEnded={onCallEnded} />
     </LiveKitRoom>
   );
 }

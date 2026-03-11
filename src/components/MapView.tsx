@@ -1,9 +1,10 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StopConfig, StopChallengeConfig } from '@/lib/config';
 import RiddleScreen from './RiddleScreen';
 import VideoPlayer from './VideoPlayer';
+import { playBadge, playUnlock, playWhoosh, playParchmentOpen, playIslandHover, startAmbientMusic, stopAmbientMusic } from '@/lib/sounds';
 
 // ─── ViewBox constants ────────────────────────────────────────────────────────
 const VBX = -50, VBY = -50, VBW = 1080, VBH = 690;
@@ -144,7 +145,7 @@ const ISLAND_DEFS: IslandDef[] = [
   {
     // 1 — Supía: lush highland, bottom-left (start)
     stopId: 'supia',
-    cx: 120, cy: 490,
+    cx: 168, cy: 490,
     offsets: [[-68,12],[-55,-28],[-22,-52],[22,-56],[60,-38],[78,-6],[68,26],[34,42],[-16,44],[-52,30]],
     topLight: '#7ac86a', topDark: '#52a248',
     cliffColor: '#7a6c50', cliffDepth: 32,
@@ -157,7 +158,7 @@ const ISLAND_DEFS: IslandDef[] = [
     ],
     labelDy: -68,
     iconSrc: '/supia.png',
-    description: 'Tierra de montañas doradas y café que perfuma el alma. Donde el río Cauca guarda los mejores secretos entre sus orillas.',
+    description: 'Donde todo comienza y los orígenes se esconden entre montañas doradas. El primer capítulo de esta historia.',
     hint: '¿Qué lugar del mundo huele a hogar aunque estés lejos? 🌄',
   },
   {
@@ -176,7 +177,7 @@ const ISLAND_DEFS: IslandDef[] = [
     ],
     labelDy: -70,
     iconSrc: '/sorpresa.webp',
-    description: 'Ciudad entre dos mundos: la magia eterna de Medellín y la energía sin límites de Nueva York. Aquí el cielo no tiene techo.',
+    description: 'En Medayork donde los sueños se hacen realidad. Entre la magia eterna de Medellín y la energía sin límites de Nueva York.',
     hint: '¿Qué ciudad te hizo sentir que todo es posible? 🌆',
   },
   {
@@ -196,7 +197,7 @@ const ISLAND_DEFS: IslandDef[] = [
     ],
     labelDy: -72,
     iconSrc: '/house.png',
-    description: 'Un lugar que lleva tu destino en el nombre. Brillante, especial, irrepetible. La estrella que ilumina este camino eres tú.',
+    description: 'La Estrella, donde mi historia tuvo un final... o quizás, donde comenzó lo más bonito de todo.',
     hint: '¿Cuántas estrellas hacen falta para saber que eres única? ⭐',
   },
   {
@@ -236,13 +237,13 @@ const ISLAND_DEFS: IslandDef[] = [
     ],
     labelDy: -66,
     iconSrc: '/far.png',
-    description: 'Más allá del horizonte, donde el tiempo se dobla y los sueños se vuelven reales. Tan lejos... y sin embargo, tan cerca del corazón.',
+    description: 'Un lugar muy lejano, un tesoro escondido que solo el corazón más valiente puede encontrar.',
     hint: 'La distancia es solo un número cuando el amor no tiene fronteras. 🌌',
   },
   {
-    // 6 — Inglaterra: castle island, upper-right (final destination)
+    // 6 — Inglaterra: castle island, near Supia (final destination)
     stopId: 'inglaterra',
-    cx: 878, cy: 142,
+    cx: 100, cy: 230,
     offsets: [[-64,10],[-52,-28],[-22,-50],[20,-56],[56,-38],[72,-4],[64,22],[30,36],[-10,40],[-48,28]],
     topLight: '#7090a0', topDark: '#506878',
     cliffColor: '#506070', cliffDepth: 30,
@@ -254,12 +255,153 @@ const ISLAND_DEFS: IslandDef[] = [
     ],
     labelDy: -68,
     iconSrc: '/castle.png',
-    description: 'Entre castillos de piedra y lluvia plateada, un corazón espera el abrazo más largo del mundo. El destino final de esta aventura.',
+    description: 'Inglaterra, el misterio conocido. Castillos de piedra que guardan el secreto más grande de esta aventura.',
     hint: '¿A cuántos kilómetros de distancia puede sentirse el amor? 🏰',
+  },
+  {
+    // 6 — Carepa: tropical coast island, lower branch from medayork2
+    stopId: 'carepa',
+    cx: 900, cy: 230,
+    offsets: [[-62,10],[-50,-28],[-18,-50],[22,-54],[60,-36],[72,-2],[62,22],[28,38],[-10,42],[-48,28]],
+    topLight: '#5aba6a', topDark: '#38904a',
+    cliffColor: '#486040', cliffDepth: 28,
+    decos: [
+      { type: 'palm', dx: -30, dy: -42, s: 1.3 },
+      { type: 'palm', dx: 24, dy: -46, s: 1.1 },
+      { type: 'flower', dx: -46, dy: -24, s: 1.3, color: '#ff9040' },
+      { type: 'flower', dx: 42, dy: -22, s: 1.1, color: '#ffcc00' },
+    ],
+    labelDy: -66,
+    iconSrc: '/carepa.png',
+    description: 'Carepa, tierra de historias que el corazón guarda en secreto. Cada video cuenta algo que solo tú puedes descifrar.',
+    hint: '¿Qué recuerdo de Carepa te hace sonreír sin razón? 🌿',
+  },
+  {
+    // 7 — Turbo: seaside island, end of lower branch
+    stopId: 'turbo',
+    cx: 822, cy: 400,
+    offsets: [[-60,10],[-48,-28],[-18,-50],[20,-54],[58,-36],[70,-2],[60,22],[26,38],[-8,42],[-46,28]],
+    topLight: '#4a80c0', topDark: '#2a5898',
+    cliffColor: '#3a4868', cliffDepth: 28,
+    decos: [
+      { type: 'cloud', dx: -18, dy: -52, s: 1.1 },
+      { type: 'cloud', dx: 16, dy: -46, s: 0.9 },
+      { type: 'palm', dx: -36, dy: -36, s: 1.2 },
+      { type: 'palm', dx: 32, dy: -38, s: 1.0 },
+    ],
+    labelDy: -64,
+    iconSrc: '/turbo.png',
+    description: 'Turbo, donde el mar y el horizonte se funden en un abrazo eterno. El último paso antes del gran destino.',
+    hint: '¿Qué ves cuando el mar te habla? 🌊',
+  },
+  {
+    // 8 — Enigma I: below lejano
+    stopId: 'enigma1',
+    cx: 578, cy: 350,
+    offsets: [[-54,8],[-44,-26],[-16,-46],[18,-50],[52,-34],[64,-2],[54,18],[22,32],[-10,36],[-42,22]],
+    topLight: '#9060cc', topDark: '#6040a0',
+    cliffColor: '#503080', cliffDepth: 26,
+    decos: [
+      { type: 'star', dx: -32, dy: -38, s: 1.3 },
+      { type: 'star', dx: 30, dy: -40, s: 1.1 },
+      { type: 'flower', dx: 0, dy: -44, s: 1.5, color: '#c878ff' },
+      { type: 'flower', dx: -28, dy: -24, s: 1.0, color: '#a050e8' },
+      { type: 'flower', dx: 26, dy: -22, s: 0.9, color: '#d090ff' },
+    ],
+    labelDy: -60,
+    iconSrc: '/sorpresa.webp',
+    description: 'Una isla cifrada que guarda secretos del alma. Solo quien resuelve sus enigmas puede continuar.',
+    hint: '¿Qué tienen en común el agua bendita y los votos eternos? 🗝️',
+  },
+  {
+    // 9 — Enigma II: near Carepa
+    stopId: 'enigma2',
+    cx: 660, cy: 530,
+    offsets: [[-54,8],[-44,-26],[-16,-46],[18,-50],[52,-34],[64,-2],[54,18],[22,32],[-10,36],[-42,22]],
+    topLight: '#c89820', topDark: '#a07800',
+    cliffColor: '#806010', cliffDepth: 26,
+    decos: [
+      { type: 'star', dx: -30, dy: -40, s: 1.2 },
+      { type: 'star', dx: 28, dy: -38, s: 1.0 },
+      { type: 'flower', dx: 0, dy: -46, s: 1.4, color: '#ffd040' },
+      { type: 'flower', dx: -26, dy: -26, s: 1.1, color: '#ffb820' },
+      { type: 'flower', dx: 24, dy: -24, s: 0.9, color: '#ffe060' },
+    ],
+    labelDy: -60,
+    iconSrc: '/sorpresa.webp',
+    description: 'El santuario dorado. Un lugar donde la fe y el amor se encuentran en sus enigmas más profundos.',
+    hint: '¿Qué secreto guarda la Palabra entre sus páginas? ✨',
   },
 ];
 
-const PATH_ORDER = ['supia', 'medayork', 'laestrella', 'medayork2', 'lejano', 'inglaterra'];
+const PARIS_DEF: IslandDef = {
+  stopId: 'paris',
+  cx: 260, cy: 100,
+  offsets: [[-60,10],[-48,-28],[-18,-50],[20,-54],[58,-36],[72,-2],[62,22],[28,38],[-8,42],[-46,28]],
+  topLight: '#d07898', topDark: '#9a4868',
+  cliffColor: '#6a3050', cliffDepth: 28,
+  decos: [
+    { type: 'flower', dx: 0, dy: -52, s: 2.2, color: '#ff80b0' },
+    { type: 'flower', dx: -34, dy: -30, s: 1.4, color: '#ffaac8' },
+    { type: 'flower', dx: 34, dy: -28, s: 1.3, color: '#ff6090' },
+    { type: 'flower', dx: -12, dy: -22, s: 1.0, color: '#ffd0e0' },
+    { type: 'flower', dx: 16, dy: -24, s: 0.9, color: '#ffb8d0' },
+  ],
+  labelDy: -68,
+  description: 'La ciudad del amor eterno. Desde aquí, el corazón hace su llamada más especial. 🗼',
+  hint: '¿Desde qué ciudad del mundo soñarías recibir una llamada de amor? 💕',
+};
+
+// ── Branching path structure ──────────────────────────────────────────────────
+// Dependency map: which stops must be fully solved to unlock each stop
+const STOP_DEPS: Record<string, string[]> = {
+  supia:      [],
+  medayork:   ['supia'],
+  laestrella: ['medayork'],
+  medayork2:  ['laestrella'],
+  carepa:     ['medayork2'],   // lower branch
+  lejano:     ['medayork2'],   // upper branch
+  turbo:      ['carepa'],
+  enigma1:    ['lejano'],      // enigma after lejano (upper path)
+  enigma2:    ['turbo'],       // enigma after turbo (lower path)
+  // 'inglaterra' is the final destination — uses allCompleted check
+};
+
+// Navigation: where onContinue takes you after finishing a stop's last challenge
+const NEXT_STOP: Record<string, string | undefined> = {
+  supia:      'medayork',
+  medayork:   'laestrella',
+  laestrella: 'medayork2',
+  medayork2:  'carepa',   // main path goes to lower branch first
+  carepa:     'turbo',
+  turbo:      'enigma2',  // lower path → enigma2 → final
+  lejano:     'enigma1',  // upper path → enigma1 → final
+  enigma1:    undefined,  // terminal — check if all of Inglaterra's deps done
+  enigma2:    undefined,  // terminal — check if all of Inglaterra's deps done
+};
+
+// Explicit edges to draw on the map (from → to)
+const MAP_EDGES: Array<[string, string]> = [
+  ['supia',     'medayork'],
+  ['medayork',  'laestrella'],
+  ['laestrella','medayork2'],
+  ['medayork2', 'carepa'],    // lower branch
+  ['carepa',    'turbo'],
+  ['turbo',     'enigma2'],
+  ['enigma2',   'inglaterra'],
+  ['medayork2', 'lejano'],    // upper branch
+  ['lejano',    'enigma1'],
+  ['enigma1',   'inglaterra'],
+];
+
+// Check if all stops that must complete before 'inglaterra' are done
+function inglandDepsComplete(stops: StopConfig[], solvedIds: Set<string>): boolean {
+  const required = ['enigma1', 'enigma2'];
+  return required.every(depId => {
+    const dep = stops.find(s => s.id === depId);
+    return dep ? dep.challenges.every(c => solvedIds.has(c.id)) : false;
+  });
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function px(coord: number, base: number, size: number) {
@@ -276,6 +418,14 @@ function stopDisplayName(stop: StopConfig, solvedIds: Set<string>) {
   const { percent } = stopProgress(stop, solvedIds);
   if (stop.hiddenName && percent < (stop.revealNameAtPercent ?? 30)) return '???';
   return stop.title;
+}
+
+function isStopAccessible(stopId: string, stops: StopConfig[], solvedIds: Set<string>): boolean {
+  const deps = STOP_DEPS[stopId] ?? [];
+  return deps.every(depId => {
+    const dep = stops.find(s => s.id === depId);
+    return dep ? dep.challenges.every(c => solvedIds.has(c.id)) : true;
+  });
 }
 
 // ─── Island SVG component ─────────────────────────────────────────────────────
@@ -344,89 +494,128 @@ function Island({ def, completed }: { def: IslandDef; completed: boolean }) {
 }
 
 // ─── Challenge media component ────────────────────────────────────────────────
+
+// Sub-component so we can use hooks for image auto-viewed
+function ImageMedia({ src, alt, onViewed }: { src: string; alt: string; onViewed: () => void }) {
+  // Mark as viewed automatically as soon as the image is shown
+  useEffect(() => { onViewed(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div style={{ borderRadius: 12, overflow: 'hidden', background: '#0a0810', display: 'flex', alignItems: 'center', justifyContent: 'center', height: 420 }}>
+      <img
+        src={src}
+        alt={alt}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+      />
+    </div>
+  );
+}
+
+function AutoViewed({ onViewed }: { onViewed: () => void }) {
+  useEffect(() => { onViewed(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
+
 function ChallengeMedia({
-  challenge, viewed, onViewed, autoPlay = true,
+  challenge, onViewed, onSurpriseCall, autoPlay = true,
 }: {
-  challenge: StopChallengeConfig; viewed: boolean; onViewed: () => void; autoPlay?: boolean;
+  challenge: StopChallengeConfig; onViewed: () => void; onSurpriseCall?: () => void; autoPlay?: boolean;
 }) {
   if (challenge.media.type === 'video' && challenge.media.src) {
     return (
-      <div style={{ marginTop: 14, borderRadius: 12, overflow: 'hidden', background: '#000' }}>
+      <div style={{ borderRadius: 12, overflow: 'hidden', background: '#000' }}>
         <VideoPlayer
           src={challenge.media.src}
-          title={challenge.media.label ?? challenge.title}
+          title=""
           onFinished={onViewed}
           compact
           autoPlay={autoPlay}
         />
+        {challenge.media.label && (
+          <p style={{
+            textAlign: 'center',
+            color: 'rgba(232,160,180,0.92)',
+            fontStyle: 'italic',
+            fontSize: 13,
+            padding: '6px 16px 14px',
+            margin: 0,
+            lineHeight: 1.55,
+          }}>
+            {challenge.media.label}
+          </p>
+        )}
       </div>
     );
   }
 
   if (challenge.media.type === 'image' && challenge.media.src) {
     return (
-      <div style={{ marginTop: 14 }}>
-        <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>
-          <img
-            src={challenge.media.src}
-            alt={challenge.media.label ?? challenge.title}
-            style={{ width: '100%', maxHeight: 280, objectFit: 'cover', display: 'block' }}
-          />
-        </div>
-        <button
-          className="btn-rose-vivid"
-          style={{ marginTop: 12, width: '100%' }}
-          onClick={onViewed}
-          disabled={viewed}
-        >
-          {viewed ? 'Imagen vista ✓' : 'Marcar imagen como vista'}
-        </button>
+      <div>
+        <ImageMedia
+          src={challenge.media.src}
+          alt={challenge.media.label ?? challenge.title}
+          onViewed={onViewed}
+        />
+        {challenge.media.label && (
+          <p style={{
+            textAlign: 'center',
+            color: 'rgba(232,160,180,0.92)',
+            fontStyle: 'italic',
+            fontSize: 13,
+            padding: '8px 16px 4px',
+            margin: 0,
+            lineHeight: 1.55,
+          }}>
+            {challenge.media.label}
+          </p>
+        )}
       </div>
     );
   }
 
-  return (
-    <div style={{ marginTop: 14, border: '1px solid var(--border)', borderRadius: 12, padding: 16, background: 'var(--surface-mid)' }}>
-      <p style={{ color: 'var(--text)', fontWeight: 600, marginBottom: 8 }}>📞 Llamada desbloqueada</p>
-      <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 12 }}>
-        Esta parada activa la llamada especial.
-      </p>
-      <button className="btn-rose-vivid" style={{ width: '100%' }} onClick={onViewed} disabled={viewed}>
-        {viewed ? 'Llamada marcada ✓' : 'Marcar llamada como completada'}
-      </button>
-    </div>
-  );
+  if (challenge.media.type === 'call') {
+    return <AutoViewed onViewed={() => { onViewed(); onSurpriseCall?.(); }} />;
+  }
+
+  return null;
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 function NodeModal({
   stop,
   solvedChallengeIds,
-  viewedMediaIds,
   onChallengeSolved,
   onMediaViewed,
   onClose,
   onBadgeEarned,
+  onSurpriseCall,
+  onContinue,
 }: {
   stop: StopConfig;
   solvedChallengeIds: Set<string>;
-  viewedMediaIds: Set<string>;
   onChallengeSolved: (id: string) => void;
   onMediaViewed: (id: string) => void;
   onClose: () => void;
   onBadgeEarned: (challengeId: string, label: string) => void;
+  onSurpriseCall?: () => void;
+  onContinue: () => void;
 }) {
   const firstUnsolved = stop.challenges.find((c) => !solvedChallengeIds.has(c.id));
   const [activeChallengeId, setActiveChallengeId] = useState<string>(
     firstUnsolved?.id ?? stop.challenges[0]?.id ?? ''
   );
+  // Track which challenge was solved in THIS session (for autoPlay — don't auto-play pre-solved videos)
+  const [justSolvedId, setJustSolvedId] = useState<string | null>(null);
 
   const activeChallenge = stop.challenges.find((c) => c.id === activeChallengeId) ?? stop.challenges[0];
   const solved = solvedChallengeIds.has(activeChallenge.id);
-  const viewed = viewedMediaIds.has(activeChallenge.id);
   const displayName = stopDisplayName(stop, solvedChallengeIds);
   const islandIconSrc = ISLAND_DEFS.find((d) => d.stopId === stop.id)?.iconSrc;
   const hasMultiple = stop.challenges.length > 1;
+
+  const activeChallengeIdx = stop.challenges.findIndex((c) => c.id === activeChallengeId);
+  const nextChallenge = stop.challenges[activeChallengeIdx + 1];
+  const isLastChallenge = !nextChallenge;
+  const allSolved = stop.challenges.every((c) => solvedChallengeIds.has(c.id));
 
   // Challenge N is accessible only if all previous challenges are solved
   const isAccessible = (idx: number) => {
@@ -597,18 +786,59 @@ function NodeModal({
               transition={{ duration: 0.1 }}
               style={{ display: 'flex', flexWrap: 'nowrap', flex: 1, minHeight: 0 }}
             >
-              {/* Left column — riddle */}
+              {/* Left column — continuar button + riddle */}
               <div style={{
                 flex: '0 0 30%',
                 padding: '16px 18px',
                 borderRight: '1px solid var(--border)',
                 minWidth: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
               }}>
+                <AnimatePresence>
+                  {solved && (
+                    <motion.div
+                      key="continuar-btn"
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.22, delay: 0.15 }}
+                    >
+                      <motion.button
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => {
+                          onMediaViewed(activeChallenge.id);
+                          if (!isLastChallenge) {
+                            setActiveChallengeId(nextChallenge.id);
+                          } else if (allSolved) {
+                            onContinue();
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '11px 16px',
+                          background: 'linear-gradient(135deg, rgba(175,55,78,0.9), rgba(135,38,58,0.9))',
+                          border: '1.5px solid rgba(215,95,115,0.5)',
+                          borderRadius: 12,
+                          color: '#fff',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 18px rgba(175,55,78,0.35)',
+                        }}
+                      >
+                        {isLastChallenge ? '¡Siguiente isla! 🗺️' : 'Continuar →'}
+                      </motion.button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <RiddleScreen
                   riddle={activeChallenge.riddle}
                   title={activeChallenge.title}
                   compact
-                  onSolved={() => onChallengeSolved(activeChallenge.id)}
+                  onSolved={() => { playUnlock(); setJustSolvedId(activeChallenge.id); onChallengeSolved(activeChallenge.id); }}
                   onFirstTrySolve={() => onBadgeEarned(activeChallenge.id, activeChallenge.title)}
                 />
               </div>
@@ -624,61 +854,75 @@ function NodeModal({
                 minWidth: 0,
                 minHeight: 400,
               }}>
-                {/* Media content — always rendered, blurred when locked */}
-                <div style={{
-                  filter: solved ? 'blur(0px)' : 'blur(16px)',
-                  transition: 'filter 0.5s ease',
-                  pointerEvents: solved ? 'auto' : 'none',
-                  userSelect: solved ? 'auto' : 'none',
-                }}>
-                  <ChallengeMedia
-                    challenge={activeChallenge}
-                    viewed={viewed}
-                    onViewed={() => onMediaViewed(activeChallenge.id)}
-                    autoPlay={solved}
-                  />
-                </div>
-
-                {/* Lock overlay when not yet solved */}
-                {!solved && (
-                  <div style={{
-                    position: 'absolute', inset: 0,
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center',
-                    gap: 10,
-                    background: 'rgba(20, 8, 14, 0.55)',
-                    borderRadius: 12,
-                  }}>
-                    <div style={{
-                      background: 'rgba(175, 55, 78, 0.18)',
-                      border: '1.5px solid rgba(215,95,115,0.35)',
-                      borderRadius: 16,
-                      padding: '18px 24px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 8,
-                      backdropFilter: 'blur(4px)',
-                    }}>
-                      <span style={{ fontSize: 38 }}>🔒</span>
-                      <p style={{
-                        fontSize: 13,
-                        color: 'rgba(255, 200, 210, 0.95)',
-                        textAlign: 'center',
-                        margin: 0,
-                        maxWidth: 160,
-                        lineHeight: 1.55,
-                        fontWeight: 500,
-                      }}>
-                        Resuelve el acertijo para descubrir el premio
-                      </p>
-                    </div>
+                {/* Enigma challenge: show key image un-blurred as context while solving */}
+                {!solved && activeChallenge.media.keyImage ? (
+                  <div style={{ borderRadius: 12, overflow: 'hidden', background: '#0a0810', display: 'flex', alignItems: 'center', justifyContent: 'center', height: 420 }}>
+                    <img
+                      src={activeChallenge.media.keyImage}
+                      alt="pista"
+                      style={{ width: '100%', height: '100%', display: 'block', objectFit: 'contain' }}
+                    />
                   </div>
+                ) : (
+                  <>
+                    {/* Regular media — blurred until solved */}
+                    <div style={{
+                      filter: solved ? 'blur(0px)' : 'blur(36px)',
+                      transition: 'filter 0.5s ease',
+                      pointerEvents: solved ? 'auto' : 'none',
+                      userSelect: solved ? 'auto' : 'none',
+                    }}>
+                      <ChallengeMedia
+                        challenge={activeChallenge}
+                        onViewed={() => onMediaViewed(activeChallenge.id)}
+                        onSurpriseCall={onSurpriseCall}
+                        autoPlay={justSolvedId === activeChallenge.id}
+                      />
+                    </div>
+
+                    {/* Lock overlay when not yet solved */}
+                    {!solved && (
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center',
+                        gap: 10,
+                        background: 'rgba(20, 8, 14, 0.55)',
+                        borderRadius: 12,
+                      }}>
+                        <div style={{
+                          background: 'rgba(175, 55, 78, 0.18)',
+                          border: '1.5px solid rgba(215,95,115,0.35)',
+                          borderRadius: 16,
+                          padding: '18px 24px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 8,
+                          backdropFilter: 'blur(4px)',
+                        }}>
+                          <span style={{ fontSize: 38 }}>🔒</span>
+                          <p style={{
+                            fontSize: 13,
+                            color: 'rgba(255, 200, 210, 0.95)',
+                            textAlign: 'center',
+                            margin: 0,
+                            maxWidth: 160,
+                            lineHeight: 1.55,
+                            fontWeight: 500,
+                          }}>
+                            Resuelve el acertijo para descubrir el premio
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </motion.div>
           </AnimatePresence>
         </div>
+
       </motion.div>
     </motion.div>
   );
@@ -742,9 +986,162 @@ interface Props {
   onDeselectStop: () => void;
   onChallengeSolved: (challengeId: string) => void;
   onMediaViewed: (challengeId: string) => void;
+  onSurpriseCall?: () => void;
   onFinalClick: () => void;
+  onParisClick: () => void;
   finalTitle: string;
   finalEmoji: string;
+}
+
+// ─── Map intro parchment ──────────────────────────────────────────────────────
+function MapIntroParchment({ onDismiss }: { onDismiss: () => void }) {
+  useEffect(() => { playParchmentOpen(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(4,2,8,0.78)',
+        backdropFilter: 'blur(6px)',
+        padding: 20,
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.82, y: 40, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        transition={{ delay: 0.1, type: 'spring', stiffness: 160, damping: 20 }}
+        style={{
+          maxWidth: 480, width: '100%',
+          background: 'linear-gradient(160deg, #f5ead0 0%, #ede0be 40%, #e5d4aa 100%)',
+          borderRadius: 4,
+          boxShadow: '0 0 0 1px rgba(120,80,20,0.35), 0 32px 80px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.55)',
+          padding: '40px 36px 32px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Parchment texture lines */}
+        {[...Array(18)].map((_, i) => (
+          <div key={i} style={{
+            position: 'absolute', left: 0, right: 0,
+            top: `${(i + 1) * 5.5}%`, height: 1,
+            background: 'rgba(140,90,20,0.07)',
+            pointerEvents: 'none',
+          }} />
+        ))}
+        {/* Corner flourishes */}
+        <div style={{ position: 'absolute', top: 10, left: 12, fontSize: 18, opacity: 0.35, lineHeight: 1 }}>✦</div>
+        <div style={{ position: 'absolute', top: 10, right: 12, fontSize: 18, opacity: 0.35, lineHeight: 1 }}>✦</div>
+        <div style={{ position: 'absolute', bottom: 10, left: 12, fontSize: 18, opacity: 0.35, lineHeight: 1 }}>✦</div>
+        <div style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 18, opacity: 0.35, lineHeight: 1 }}>✦</div>
+
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <p style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(100,60,10,0.55)', marginBottom: 8, fontFamily: '"Georgia",serif' }}>
+            — Mapa Secreto —
+          </p>
+          <h2 style={{
+            fontFamily: '"Playfair Display","Georgia",serif',
+            fontSize: 24, fontWeight: 700,
+            color: '#3a1e06', lineHeight: 1.25, margin: 0,
+          }}>
+            Bienvenida al Archipiélago<br />de Geralduchén 🗺️
+          </h2>
+        </div>
+
+        {/* Divider */}
+        <div style={{ borderTop: '1.5px solid rgba(120,80,20,0.25)', marginBottom: 20 }} />
+
+        {/* Body */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 22 }}>
+          <p style={{ fontSize: 14, color: '#4a2e0e', fontFamily: '"Georgia",serif', lineHeight: 1.75, margin: 0 }}>
+            Ante ti se extiende un archipiélago lleno de misterios. <strong>Cada isla guarda un secreto</strong> — resuelve sus enigmas para revelar lo que esconden.
+          </p>
+
+          {/* Alerta islas enigma — claves para la isla final */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+            background: 'rgba(140,20,20,0.12)', borderRadius: 10,
+            border: '1.5px solid rgba(180,50,40,0.4)', padding: '12px 14px',
+          }}>
+            <span style={{ fontSize: 24, flexShrink: 0, lineHeight: 1.2 }}>⚠️</span>
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#7a1e10', fontFamily: '"Georgia",serif', marginBottom: 4 }}>
+                ¡Estate muy atenta a las Islas Enigma!
+              </p>
+              <p style={{ margin: 0, fontSize: 12, color: '#5c2010', fontFamily: '"Georgia",serif', lineHeight: 1.65 }}>
+                Cada <strong>Isla Enigma</strong> te entregará una <strong>clave secreta</strong> que necesitarás más adelante para poder llegar a la <strong>isla final</strong>. No las pierdas de vista. 🔑
+              </p>
+            </div>
+          </div>
+
+          {/* Legend: isla secreta */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+            background: 'rgba(120,80,20,0.1)', borderRadius: 10,
+            border: '1px solid rgba(120,80,20,0.22)', padding: '12px 14px',
+          }}>
+            <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1.2 }}>🔮</span>
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#3a1e06', fontFamily: '"Georgia",serif', marginBottom: 3 }}>
+                Isla Secreta
+              </p>
+              <p style={{ margin: 0, fontSize: 12, color: '#5c3612', fontFamily: '"Georgia",serif', lineHeight: 1.6 }}>
+                Su nombre se revela a medida que desbloqueas sus enigmas. ¡Descubre qué lugar esconde!
+              </p>
+            </div>
+          </div>
+
+          {/* Legend: isla enigma */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+            background: 'rgba(180,100,20,0.12)', borderRadius: 10,
+            border: '1px solid rgba(180,100,20,0.3)', padding: '12px 14px',
+          }}>
+            <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1.2 }}>⚡</span>
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#3a1e06', fontFamily: '"Georgia",serif', marginBottom: 3 }}>
+                Isla Enigma
+              </p>
+              <p style={{ margin: 0, fontSize: 12, color: '#5c3612', fontFamily: '"Georgia",serif', lineHeight: 1.6 }}>
+                Un reto especial: <strong>guarda bien la clave</strong> que te entrega. La necesitarás para llegar a tu destino final. ¡No hay atajos!
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ borderTop: '1.5px solid rgba(120,80,20,0.2)', marginBottom: 18 }} />
+
+        <p style={{ fontSize: 12, color: 'rgba(90,50,10,0.6)', fontStyle: 'italic', fontFamily: '"Georgia",serif', textAlign: 'center', lineHeight: 1.6, marginBottom: 20 }}>
+          Bienvenida al Archipiélago de Geralduchén.<br />¡Mucho ánimo, exploradora! 🌊
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={onDismiss}
+            style={{
+              padding: '13px 40px',
+              background: 'linear-gradient(135deg, #7a3828, #5a2218)',
+              color: '#fdf0d8',
+              border: '1px solid rgba(180,80,40,0.5)',
+              borderRadius: 3,
+              fontSize: 14, fontFamily: '"Georgia",serif', letterSpacing: '0.07em',
+              cursor: 'pointer',
+              boxShadow: '0 4px 18px rgba(100,30,10,0.4)',
+            }}
+          >
+            ¡Comenzar la aventura! 🗺️
+          </motion.button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
 }
 
 // ─── MapView ──────────────────────────────────────────────────────────────────
@@ -758,17 +1155,42 @@ export default function MapView({
   onDeselectStop,
   onChallengeSolved,
   onMediaViewed,
+  onSurpriseCall,
   onFinalClick,
+  onParisClick,
   finalTitle,
   finalEmoji,
 }: Props) {
   const modalStop = selectedStopId ? stops.find((s) => s.id === selectedStopId) ?? null : null;
   const [hoverStopId, setHoverStopId] = useState<string | null>(null);
   const [earnedBadges, setEarnedBadges] = useState<Array<{ id: string; label: string }>>([]);
+  const [parisRevealed, setParisRevealed] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
+  const [gabys, setGabys] = useState(0);
+  const [gabyPopup, setGabyPopup] = useState(false);
 
   const handleBadgeEarned = (id: string, label: string) => {
-    setEarnedBadges((prev) => prev.some((b) => b.id === id) ? prev : [...prev, { id, label }]);
+    setEarnedBadges((prev) => {
+      if (prev.some((b) => b.id === id)) return prev;
+      playBadge();
+      return [...prev, { id, label }];
+    });
   };
+
+  const checkIslandGaby = (stop: StopConfig, currentBadges: Array<{ id: string; label: string }>) => {
+    const isPerfect = stop.challenges.every(c => currentBadges.some(b => b.id === c.id));
+    if (isPerfect) {
+      setGabys(g => g + 1);
+      setGabyPopup(true);
+      setTimeout(() => setGabyPopup(false), 3000);
+    }
+  };
+
+  // Start ambient music when map mounts, fade out on unmount
+  useEffect(() => {
+    startAmbientMusic();
+    return () => stopAmbientMusic();
+  }, []);
 
   const islandMap = useMemo(() => {
     const m = new Map<string, IslandDef>();
@@ -778,15 +1200,15 @@ export default function MapView({
 
   const pathSegments = useMemo(() => {
     const segs: Array<{ d: string; unlocked: boolean; ocean?: boolean }> = [];
-    for (let i = 0; i < PATH_ORDER.length - 1; i++) {
-      const a = islandMap.get(PATH_ORDER[i]);
-      const b = islandMap.get(PATH_ORDER[i + 1]);
+    for (const [fromId, toId] of MAP_EDGES) {
+      const a = islandMap.get(fromId);
+      const b = islandMap.get(toId);
       if (!a || !b) continue;
       const mx = (a.cx + b.cx) / 2;
-      const isOcean = PATH_ORDER[i] === 'lejano' && PATH_ORDER[i + 1] === 'inglaterra';
-      const my = (a.cy + b.cy) / 2 - (isOcean ? 90 : 32);
+      const isOcean = (fromId === 'lejano' || fromId === 'turbo') && toId === 'inglaterra';
+      const my = (a.cy + b.cy) / 2 - (isOcean ? 70 : 32);
       const d = `M ${a.cx},${a.cy} Q ${mx},${my} ${b.cx},${b.cy}`;
-      const stopA = stops.find((s) => s.id === PATH_ORDER[i]);
+      const stopA = stops.find((s) => s.id === fromId);
       const unlocked = stopA ? stopA.challenges.some((c) => solvedChallengeIds.has(c.id)) : false;
       segs.push({ d, unlocked, ocean: isOcean });
     }
@@ -910,6 +1332,47 @@ export default function MapView({
             return <Island key={def.stopId} def={def} completed={completed} />;
           })}
 
+          {/* París island — emerges with whoosh after England is clicked */}
+          <AnimatePresence>
+            {parisRevealed && (() => {
+              const def = PARIS_DEF;
+              const name = 'París 🗼';
+              const pillW = Math.max(name.length * 7.2, 48) + 22;
+              const pillH = 20;
+              const pillX = def.cx - pillW / 2;
+              const pillY = def.cy + def.labelDy - pillH - 4;
+              return (
+                <motion.g
+                  key="paris-island"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  transition={{ type: 'spring', stiffness: 150, damping: 13 }}
+                  style={{ transformBox: 'fill-box', transformOrigin: `${def.cx}px ${def.cy}px` }}
+                >
+                  <Island def={def} completed={false} />
+                  {/* Ripple rings */}
+                  <circle cx={def.cx} cy={def.cy} r={45} fill="none" stroke="rgba(220,120,170,0.55)" strokeWidth={3}>
+                    <animate attributeName="r" values="40;140" dur="1.4s" fill="freeze" />
+                    <animate attributeName="opacity" values="0.7;0" dur="1.4s" fill="freeze" />
+                  </circle>
+                  <circle cx={def.cx} cy={def.cy} r={45} fill="none" stroke="rgba(255,170,210,0.35)" strokeWidth={2}>
+                    <animate attributeName="r" values="40;180" dur="1.9s" begin="0.25s" fill="freeze" />
+                    <animate attributeName="opacity" values="0.5;0" dur="1.9s" begin="0.25s" fill="freeze" />
+                  </circle>
+                  {/* Label pill */}
+                  <rect x={pillX} y={pillY} width={pillW} height={pillH} rx={10} ry={10}
+                    fill="rgba(210,100,155,0.95)"
+                    filter="url(#pill-shadow)" />
+                  <text x={def.cx} y={pillY + pillH - 6}
+                    textAnchor="middle" fontSize={11.5} fontWeight={700} fill="#fff">
+                    {name}
+                  </text>
+                </motion.g>
+              );
+            })()}
+          </AnimatePresence>
+
           {/* Island labels */}
           {ISLAND_DEFS.map((def) => {
             const stop = stops.find((s) => s.id === def.stopId);
@@ -983,8 +1446,8 @@ export default function MapView({
                 key={def.stopId}
                 role="button"
                 tabIndex={0}
-                onClick={allCompleted ? onFinalClick : undefined}
-                onMouseEnter={() => setHoverStopId(def.stopId)}
+                onClick={allCompleted ? () => { if (!parisRevealed) { playWhoosh(); setParisRevealed(true); } else onFinalClick(); } : undefined}
+                onMouseEnter={() => { playIslandHover(); setHoverStopId(def.stopId); }}
                 onMouseLeave={() => setHoverStopId(null)}
                 style={{
                   position: 'absolute',
@@ -1042,22 +1505,23 @@ export default function MapView({
           const { solved, total, percent } = stopProgress(stop, solvedChallengeIds);
           const allViewed = stop.challenges.every((c) => viewedMediaIds.has(c.id));
           const isSelected = selectedStopId === def.stopId;
+          const accessible = isStopAccessible(def.stopId, stops, solvedChallengeIds);
 
           return (
             <div
               key={def.stopId}
               role="button"
-              tabIndex={0}
-              onClick={() => onSelectStop(stop)}
-              onKeyDown={(e) => e.key === 'Enter' && onSelectStop(stop)}
-              onMouseEnter={() => setHoverStopId(def.stopId)}
+              tabIndex={accessible ? 0 : -1}
+              onClick={() => accessible && onSelectStop(stop)}
+              onKeyDown={(e) => e.key === 'Enter' && accessible && onSelectStop(stop)}
+              onMouseEnter={() => { playIslandHover(); setHoverStopId(def.stopId); }}
               onMouseLeave={() => setHoverStopId(null)}
               style={{
                 position: 'absolute',
                 left: `calc(${px(def.cx, VBX, VBW)} - ${iconSize / 2}px)`,
                 top: `calc(${px(def.cy, VBY, VBH)} - ${iconSize / 2 + 40}px)`,
                 width: iconSize, height: iconSize + 40,
-                cursor: 'pointer',
+                cursor: accessible ? 'pointer' : 'default',
                 display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
                 paddingBottom: 20,
               }}
@@ -1075,8 +1539,8 @@ export default function MapView({
               >
                 <circle
                   cx={ringSize/2} cy={ringSize/2} r={ringSize/2-2}
-                  fill={allViewed ? 'rgba(255,200,60,0.18)' : isSelected ? 'rgba(255,110,20,0.22)' : 'rgba(8,14,24,0.45)'}
-                  stroke={allViewed ? 'rgba(255,220,100,0.95)' : isSelected ? 'rgba(255,120,30,0.98)' : 'rgba(255,255,255,0.35)'}
+                  fill={!accessible ? 'rgba(8,14,24,0.6)' : allViewed ? 'rgba(255,200,60,0.18)' : isSelected ? 'rgba(255,110,20,0.22)' : 'rgba(8,14,24,0.45)'}
+                  stroke={!accessible ? 'rgba(255,255,255,0.12)' : allViewed ? 'rgba(255,220,100,0.95)' : isSelected ? 'rgba(255,120,30,0.98)' : 'rgba(255,255,255,0.35)'}
                   strokeWidth={allViewed || isSelected ? 3 : 2}
                 />
                 {/* Progress track */}
@@ -1144,6 +1608,24 @@ export default function MapView({
                 }}>
                   {solved}/{total}
                 </span>
+              )}
+
+              {/* Locked overlay — sequential access */}
+              {!accessible && (
+                <div style={{
+                  position: 'absolute', inset: 0, zIndex: 4,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  pointerEvents: 'none',
+                }}>
+                  <div style={{
+                    background: 'rgba(0,0,0,0.55)', borderRadius: '50%',
+                    width: ringSize + 8, height: ringSize + 8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 22,
+                  }}>
+                    🔒
+                  </div>
+                </div>
               )}
             </div>
           );
@@ -1236,11 +1718,60 @@ export default function MapView({
         <h2 className="serif" style={{ color: 'rgba(255,255,255,0.92)', fontSize: 16, margin: 0 }}>
           🗺️ Mapa del viaje
         </h2>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, margin: 0 }}>
-          {stops.reduce((n, s) => n + s.challenges.filter((c) => solvedChallengeIds.has(c.id)).length, 0)}/
-          {stops.reduce((n, s) => n + s.challenges.length, 0)} acertijos resueltos
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {gabys > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {Array.from({ length: gabys }).map((_, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 14, delay: i * 0.05 }}
+                  style={{ fontSize: 18, lineHeight: 1 }}
+                >
+                  💗
+                </motion.span>
+              ))}
+            </div>
+          )}
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, margin: 0 }}>
+            {stops.reduce((n, s) => n + s.challenges.filter((c) => solvedChallengeIds.has(c.id)).length, 0)}/
+            {stops.reduce((n, s) => n + s.challenges.length, 0)} acertijos resueltos
+          </p>
+        </div>
       </div>
+
+      {/* ── Gaby earned popup ── */}
+      <AnimatePresence>
+        {gabyPopup && (
+          <motion.div
+            key="gaby-popup"
+            initial={{ opacity: 0, scale: 0.7, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.85, y: -10 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+            style={{
+              position: 'absolute', top: 52, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 300, pointerEvents: 'none',
+              background: 'rgba(6,10,20,0.94)',
+              border: '1.5px solid rgba(232,130,170,0.6)',
+              borderRadius: 16,
+              padding: '12px 22px',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+              boxShadow: '0 8px 32px rgba(180,60,100,0.4)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <span style={{ fontSize: 28 }}>💗</span>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'rgba(255,200,220,0.95)' }}>
+              ¡Gaby desbloqueada!
+            </p>
+            <p style={{ margin: 0, fontSize: 11, color: 'rgba(200,160,180,0.8)', textAlign: 'center' }}>
+              Isla perfecta — sin errores ✨
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Final button (when all viewed) ── */}
       <AnimatePresence>
@@ -1257,7 +1788,7 @@ export default function MapView({
             <button
               className="btn-rose-vivid"
               style={{ padding: '14px 32px', fontSize: 16, boxShadow: '0 4px 24px rgba(158,86,100,0.6)' }}
-              onClick={onFinalClick}
+              onClick={onParisClick}
             >
               {finalEmoji} {finalTitle}
             </button>
@@ -1291,17 +1822,83 @@ export default function MapView({
         )}
       </AnimatePresence>
 
+      {/* ── París clickable overlay ── */}
+      <AnimatePresence>
+        {parisRevealed && (
+          <motion.div
+            key="paris-btn"
+            initial={{ scale: 0, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 150, damping: 13, delay: 0.15 }}
+            role="button"
+            tabIndex={0}
+            onClick={onParisClick}
+            onMouseEnter={() => { playIslandHover(); setHoverStopId('paris'); }}
+            onMouseLeave={() => setHoverStopId(null)}
+            style={{
+              position: 'absolute',
+              left: `calc(${((PARIS_DEF.cx - VBX) / VBW) * 100}% - 85px)`,
+              top: `calc(${((PARIS_DEF.cy - VBY) / VBH) * 100}% - 125px)`,
+              width: 170, height: 210,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+              paddingBottom: 20,
+            }}
+          >
+            {/* Ring */}
+            <svg style={{ position: 'absolute', top: 85, left: 45, pointerEvents: 'none', zIndex: 1 }}
+              width={80} height={80} viewBox="0 0 80 80">
+              <circle cx={40} cy={40} r={37}
+                fill="rgba(210,100,150,0.18)"
+                stroke="rgba(220,120,170,0.95)"
+                strokeWidth={2.5} />
+            </svg>
+            {/* Glow */}
+            <div style={{
+              position: 'absolute', top: 85, left: 45,
+              width: 80, height: 80, borderRadius: '50%',
+              boxShadow: '0 0 36px rgba(220,100,160,0.7), 0 0 70px rgba(200,80,140,0.3)',
+              pointerEvents: 'none', zIndex: 0,
+            }} />
+            <span style={{ fontSize: 72, lineHeight: 1, position: 'relative', zIndex: 2, filter: 'drop-shadow(0 4px 16px rgba(220,100,160,0.8))' }}>
+              🗼
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Map intro parchment ── */}
+      <AnimatePresence>
+        {showIntro && (
+          <MapIntroParchment onDismiss={() => setShowIntro(false)} />
+        )}
+      </AnimatePresence>
+
       {/* ── Modal ── */}
       <AnimatePresence>
         {modalStop && (
           <NodeModal
+            key={modalStop.id}
             stop={modalStop}
             solvedChallengeIds={solvedChallengeIds}
-            viewedMediaIds={viewedMediaIds}
             onChallengeSolved={onChallengeSolved}
             onMediaViewed={onMediaViewed}
             onClose={onDeselectStop}
             onBadgeEarned={handleBadgeEarned}
+            onSurpriseCall={onSurpriseCall}
+            onContinue={() => {
+              checkIslandGaby(modalStop, earnedBadges);
+              const nextId = NEXT_STOP[modalStop.id];
+              const nextStop = nextId ? stops.find((s) => s.id === nextId) : undefined;
+              onDeselectStop();
+              if (nextStop) {
+                setTimeout(() => onSelectStop(nextStop), 220);
+              } else if (inglandDepsComplete(stops, solvedChallengeIds)) {
+                setTimeout(() => onFinalClick(), 300);
+              }
+              // else: just close — other branch still pending
+            }}
           />
         )}
       </AnimatePresence>

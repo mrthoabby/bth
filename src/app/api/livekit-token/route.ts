@@ -16,7 +16,11 @@ export async function GET(req: NextRequest) {
   }
 
   const role = req.nextUrl.searchParams.get('role') ?? 'birthday';
-  const identity = role === 'caller' ? 'caller-person' : `birthday-${Date.now()}`;
+  const name = req.nextUrl.searchParams.get('name');
+  const identity =
+    role === 'caller' ? 'caller-person' :
+    role === 'spectator' ? `espectador-${name ?? Date.now()}` :
+    'birthday-person'; // fixed identity so reconnects replace the old session cleanly
 
   const at = new AccessToken(apiKey, apiSecret, {
     identity,

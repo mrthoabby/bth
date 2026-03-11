@@ -213,7 +213,7 @@ export default function BirthdayScene({ music, message, subMessage, onContinue }
               color: 'rgba(212,168,64,0.65)', marginBottom: 18, fontWeight: 600,
             }}
           >
-            Una historia de amor
+            Una historia especial
           </motion.p>
 
           {/* Rose decoration */}

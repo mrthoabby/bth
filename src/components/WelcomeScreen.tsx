@@ -241,7 +241,7 @@ export default function WelcomeScreen({ riddle, recordingState, onStart, onSolve
                   fontFamily: '"Georgia", serif',
                 }}
               >
-                Te preparé algo muy especial para este día. Para guardar este momento necesito acceso a tu cámara y micrófono.
+                Te preparé algo muy especial para este día. Para guardar este momento necesito acceso a tu cámara y micrófono. Tendrás que resolver acertijos para continuar. y lograr llegar al premio final adelante. queda poco tiempo y a tu lado tu primer acertijo, "Puedes pedir ayuda a una sobrina o hermana"
               </motion.p>
 
               {/* Permissions list */}

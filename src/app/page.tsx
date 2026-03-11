@@ -5,21 +5,26 @@ import dynamic from 'next/dynamic';
 
 import { loadConfig, BirthdayConfig, StopConfig } from '@/lib/config';
 import { useRecording } from '@/hooks/useRecording';
+import { startAmbientMusic } from '@/lib/sounds';
 
 import RosePetals from '@/components/RosePetals';
 import WelcomeScreen from '@/components/WelcomeScreen';
 import BirthdayScene from '@/components/BirthdayScene';
 import MapView from '@/components/MapView';
 import FinalScreen from '@/components/FinalScreen';
+import RouletteScreen from '@/components/RouletteScreen';
 
 const SurpriseCall = dynamic(() => import('@/components/SurpriseCall'), { ssr: false });
 const PhotoSession = dynamic(() => import('@/components/PhotoSession'), { ssr: false });
+const BackgroundStream = dynamic(() => import('@/components/BackgroundStream'), { ssr: false });
 
-type Phase = 'welcome' | 'birthday-scene' | 'photo-session' | 'map' | 'surprise-call' | 'final';
+type Phase = 'welcome' | 'birthday-scene' | 'photo-session' | 'map' | 'final';
+type Overlay = 'none' | 'paris-modal' | 'roulette' | 'surprise-call';
 
 export default function Home() {
   const [config, setConfig] = useState<BirthdayConfig | null>(null);
   const [phase, setPhase] = useState<Phase>('welcome');
+  const [overlay, setOverlay] = useState<Overlay>('none');
 
   // Stops state
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
@@ -27,13 +32,42 @@ export default function Home() {
   const [viewedMediaIds, setViewedMediaIds] = useState<Set<string>>(new Set());
   const [hangingPhotos, setHangingPhotos] = useState<string[]>([]);
 
-  const { state: recordingState, start: startRecording, stop: stopRecording } = useRecording();
+  const [bgToken, setBgToken] = useState<{ token: string; url: string } | null>(null);
+
+  const { state: recordingState, start: startRecording, stop: stopRecording, camStream, screenStream } = useRecording();
 
   useEffect(() => {
-    loadConfig().then(setConfig).catch(console.error);
+    loadConfig().then((cfg) => {
+      setConfig(cfg);
+      // DEV: auto-unlock all for testing
+      const all = cfg.stops.flatMap((s) => s.challenges.map((c) => c.id));
+      setSolvedChallengeIds(new Set(all));
+      setViewedMediaIds(new Set(all));
+    }).catch(console.error);
+  }, []);
+
+  // Start ambient music on the very first user interaction (browser requires gesture)
+  useEffect(() => {
+    const start = () => { startAmbientMusic(); document.removeEventListener('pointerdown', start); };
+    document.addEventListener('pointerdown', start);
+    return () => document.removeEventListener('pointerdown', start);
+  }, []);
+
+  // Connect birthday person to LiveKit silently from page open
+  // so spectators can see her camera throughout the entire experience
+  useEffect(() => {
+    fetch('/api/livekit-token?role=birthday')
+      .then((r) => r.json())
+      .then((data) => setBgToken({ token: data.token, url: data.url }))
+      .catch(() => {});
   }, []);
 
   const handleStart = useCallback(async () => {
+    // Fetch a fresh token right before connecting so any stale session is replaced
+    const freshToken = await fetch('/api/livekit-token?role=birthday')
+      .then((r) => r.json())
+      .catch(() => null);
+    if (freshToken?.token) setBgToken({ token: freshToken.token, url: freshToken.url });
     await startRecording();
   }, [startRecording]);
 
@@ -60,6 +94,7 @@ export default function Home() {
   const allCompleted = config
     ? config.stops.every((stop) => stop.challenges.every((c) => solvedChallengeIds.has(c.id)))
     : false;
+
 
   // ── DEV shortcut: unlock all challenges instantly ──
   const devUnlockAll = useCallback(() => {
@@ -146,6 +181,7 @@ export default function Home() {
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 220 }}>
             {([
+              ['secret',         '🔑 Secreta'],
               ['welcome',        '📖 Bienvenida'],
               ['birthday-scene', '🎂 Portada'],
               ['photo-session',  '📸 Fotos'],
@@ -178,6 +214,15 @@ export default function Home() {
             </button>
           </div>
         </div>
+      )}
+
+      {bgToken && phase !== 'surprise-call' && (
+        <BackgroundStream
+          token={bgToken.token}
+          serverUrl={bgToken.url}
+          camStream={camStream}
+          screenStream={screenStream}
+        />
       )}
 
       <AnimatePresence mode="wait">
@@ -228,11 +273,126 @@ export default function Home() {
               onDeselectStop={handleDeselectStop}
               onChallengeSolved={handleChallengeSolved}
               onMediaViewed={handleMediaViewed}
-              onFinalClick={() => setPhase('surprise-call')}
+              onSurpriseCall={() => setPhase('surprise-call')}
+              onFinalClick={() => setPhase('paris-modal')}
+              onParisClick={() => setPhase('paris-modal')}
               finalTitle={config.final.title}
               finalEmoji={config.final.emoji}
             />
           </motion.div>
+        )}
+
+        {phase === 'paris-modal' && (
+          <motion.div
+            key="paris-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 300,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(4,2,10,0.88)',
+              backdropFilter: 'blur(10px)',
+              padding: 24,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.88, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 160, damping: 20, delay: 0.1 }}
+              style={{
+                maxWidth: 420, width: '100%',
+                background: 'linear-gradient(160deg, rgba(20,6,18,0.98), rgba(10,2,12,0.99))',
+                border: '1.5px solid rgba(215,95,115,0.45)',
+                borderRadius: 24,
+                padding: '40px 32px',
+                boxShadow: '0 0 60px rgba(175,55,78,0.25), 0 20px 60px rgba(0,0,0,0.7)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+                textAlign: 'center',
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 14, delay: 0.25 }}
+                style={{ fontSize: 52 }}
+              >
+                🔓
+              </motion.div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                style={{ fontSize: 22, fontWeight: 700, color: '#f8dde4', margin: 0, letterSpacing: '0.02em' }}
+              >
+                Secretos Desbloqueados
+              </motion.h2>
+
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 }}
+                style={{ fontSize: 14, color: 'rgba(230,180,195,0.85)', lineHeight: 1.7, margin: 0 }}
+              >
+                Lo lograste. Cada enigma, cada isla, cada historia.{'\n'}
+                Como último regalo, hay un video esperándote.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55 }}
+                style={{
+                  width: '100%',
+                  padding: '14px 0',
+                  borderTop: '1px solid rgba(215,95,115,0.2)',
+                  borderBottom: '1px solid rgba(215,95,115,0.2)',
+                  display: 'flex', flexDirection: 'column', gap: 8,
+                }}
+              >
+                {['Todos los mensajes', 'Todas las islas', 'Todos los enigmas'].map((item, i) => (
+                  <motion.div
+                    key={item}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.55 + i * 0.1 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'rgba(200,255,210,0.85)' }}
+                  >
+                    <span style={{ color: '#4ecb71', fontSize: 16 }}>✓</span> {item}
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.75 }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setPhase('roulette')}
+                style={{
+                  width: '100%',
+                  padding: '16px 24px',
+                  background: 'linear-gradient(135deg, rgba(175,55,78,0.95), rgba(135,38,58,0.95))',
+                  border: '1.5px solid rgba(215,95,115,0.6)',
+                  borderRadius: 14,
+                  color: '#fff',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 24px rgba(175,55,78,0.45)',
+                  letterSpacing: '0.03em',
+                }}
+              >
+                ▶ Ver Video Final
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {phase === 'roulette' && (
+          <RouletteScreen key="roulette" onDone={() => setPhase('surprise-call')} />
         )}
 
         {phase === 'surprise-call' && (

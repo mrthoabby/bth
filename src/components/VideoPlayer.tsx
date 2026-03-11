@@ -1,6 +1,7 @@
 'use client';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { duckAmbientMusic, unduckAmbientMusic } from '@/lib/sounds';
 
 interface Props {
   src: string;
@@ -12,33 +13,39 @@ interface Props {
 
 export default function VideoPlayer({ src, title, onFinished, compact = false, autoPlay = true }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     if (autoPlay) v.play().catch(() => {});
-    const handler = () => onFinished();
-    v.addEventListener('ended', handler);
-    return () => v.removeEventListener('ended', handler);
+    const onEnded = () => { setIsPlaying(false); unduckAmbientMusic(); onFinished(); };
+    const onPlay  = () => { setIsPlaying(true); duckAmbientMusic(); };
+    const onPause = () => { setIsPlaying(false); unduckAmbientMusic(); };
+    v.addEventListener('ended', onEnded);
+    v.addEventListener('play', onPlay);
+    v.addEventListener('pause', onPause);
+    return () => {
+      v.removeEventListener('ended', onEnded);
+      v.removeEventListener('play', onPlay);
+      v.removeEventListener('pause', onPause);
+      unduckAmbientMusic();
+    };
   }, [src, onFinished, autoPlay]);
 
   if (compact) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '20px 20px 12px' }}>
-        <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-muted)', marginBottom: 12, opacity: 0.9 }}>
-          {title}
-        </p>
-        <div style={{ borderRadius: 16, overflow: 'hidden', background: '#000', flex: 1, minHeight: 200, boxShadow: '0 4px 24px rgba(44, 36, 40, 0.1)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', padding: '8px 0 0' }}>
+        <div style={{
+          borderRadius: 16,
+          overflow: 'hidden',
+          background: '#000',
+          boxShadow: '0 4px 24px rgba(44, 36, 40, 0.1)',
+          height: isPlaying ? 340 : 160,
+          transition: 'height 0.4s ease',
+        }}>
           <video ref={videoRef} src={src} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
-        <motion.button
-          className="btn-ghost"
-          style={{ marginTop: 12, alignSelf: 'center' }}
-          onClick={onFinished}
-          whileHover={{ scale: 1.03 }}
-        >
-          Continuar ❤️
-        </motion.button>
       </div>
     );
   }

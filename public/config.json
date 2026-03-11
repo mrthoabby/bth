@@ -1,4 +1,5 @@
 {
+  "secretWord": "rosa",
   "intro": {
     "riddle": "Soy algo que crece cuando lo compartes, pero muere si lo ocultas. ¿Qué soy?",
     "answer": "amor",
@@ -18,7 +19,7 @@
   "birthdayScene": {
     "music": "/audio/birthday.mp3",
     "message": "Hoy celebramos que llegaste al mundo ❤️",
-    "subMessage": "Cada día a tu lado es el mejor regalo que me ha dado la vida."
+    "subMessage": "Y que y que para nosotros tu vida es un regalo"
   },
   "photoSession": {
     "title": "Guarda un recuerdo",
@@ -30,81 +31,111 @@
       "id": "supia",
       "title": "Supía",
       "emoji": "🌄",
-      "hiddenName": false,
-      "revealNameAtPercent": 30,
+      "hiddenName": true,
+      "revealNameAtPercent": 100,
       "challenges": [
         {
           "id": "supia_r1",
-          "title": "Paisaje 1",
+          "title": "Mensaje 1",
           "riddle": {
-            "riddle": "¿Qué color te queda hermoso?",
-            "answer": "rojo",
+            "riddle": "La Biblia dice: 'hay amigos más unidos que un hermano'. En tu vida hay una persona que lo demuestra cada día. ¿Quién es?",
+            "answer": "hermana",
             "hints": [
-              "Color pasión",
-              "También en rosas",
-              "Te hace brillar"
+              "Comparte tu apellido",
+              "Creció contigo",
+              "Es tu mejor amiga y tu familia al mismo tiempo"
             ],
             "type": "multiple",
             "options": [
-              "Rojo",
-              "Gris",
-              "Marrón",
-              "Negro"
-            ]
+              "Hermana",
+              "Prima",
+              "Mamá",
+              "Amiga"
+            ],
+            "confirmationMessage": "Proverbios 18:24 — y ella lo demuestra cada día: tu mejor amiga y tu hermana en una sola persona 💕"
           },
           "media": {
             "type": "video",
-            "src": "/videos/memories.mp4",
-            "label": "Video"
+            "src": "/videos/supia/hermana.mp4",
+            "label": "Mensaje de tu hermana 💕"
           }
         },
         {
           "id": "supia_r2",
-          "title": "Paisaje 2",
+          "title": "Mensaje 2",
           "riddle": {
-            "riddle": "¿Qué prefieres para una cita?",
-            "answer": "atardecer",
+            "riddle": "Cuando cocina su plato especial, se toca el pecho, mira a todos y dice con orgullo: 'Soy el rey del ___'. ¿Qué falta?",
+            "answer": "adobo",
             "hints": [
-              "Hora dorada",
-              "Cielo hermoso",
-              "Antes de la noche"
+              "Es una mezcla de especias",
+              "Se usa para marinar carnes",
+              "Rima con adobe pero no es lo mismo"
             ],
             "type": "multiple",
             "options": [
-              "Atardecer",
-              "Madrugada",
-              "Mediodía",
-              "Lluvia fuerte"
-            ]
+              "Adobe",
+              "Adobo",
+              "Andar",
+              "Armar"
+            ],
+            "confirmationMessage": "¡El rey del adobo en persona! Me quedé con tu hermana y les di el mejor sazón de la familia 👑🍖"
           },
           "media": {
-            "type": "image",
-            "src": "/images/supia-1.jpg",
-            "label": "Foto"
+            "type": "video",
+            "src": "/videos/supia/cuñado.mp4",
+            "label": "Mensaje de tu cuñado 🤗"
           }
         },
         {
           "id": "supia_r3",
-          "title": "Conexión",
+          "title": "Mensaje 3",
           "riddle": {
-            "riddle": "¿Qué quiero repetir contigo siempre?",
-            "answer": "momentos",
+            "riddle": "Cuando te veo llegar, corro a abrazarte y le digo a todo el mundo: '¡llegó mi favorita!' Pero yo, ¿quién soy para ti?",
+            "answer": "sobrina",
             "hints": [
-              "No son cosas",
-              "Se viven",
-              "Se recuerdan"
+              "Es pequeña y llena de amor",
+              "Te elige a ti por encima de todos",
+              "Es la hija de tu hermana"
             ],
             "type": "multiple",
             "options": [
-              "Momentos",
-              "Excusas",
-              "Olvidos",
-              "Dudas"
-            ]
+              "Sobrina",
+              "Hermana",
+              "Prima",
+              "Amiga"
+            ],
+            "confirmationMessage": "¡Claro que sí! Tu sobrina — la que corre a abrazarte y te eligió como su favorita para siempre 🌸"
           },
           "media": {
-            "type": "call",
-            "label": "Llamada"
+            "type": "video",
+            "src": "/videos/supia/sobrina.mp4",
+            "label": "Mensaje de tu sobrina 🌸"
+          }
+        },
+        {
+          "id": "supia_r4",
+          "title": "Mensaje 4",
+          "riddle": {
+            "riddle": "Yo soy el ___ de ___",
+            "answer": "Pollito Gordo / Papá",
+            "hints": [
+              "Tiene un apodo muy especial para ti",
+              "Es el hombre más importante de tu familia",
+              "Te quiere con todo su corazón"
+            ],
+            "type": "multiple",
+            "options": [
+              "Pollito Gordo / Papá",
+              "Tía Favorita / Todos",
+              "El Maestro / Mishagy",
+              "Tú y yo / Siempre"
+            ],
+            "confirmationMessage": "El Pollito Gordo de papá — su amor por ti no tiene nombre suficientemente grande ❤️"
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/supia/papa.mp4",
+            "label": "Mensaje de tu papá ❤️"
           }
         }
       ]
@@ -114,80 +145,27 @@
       "title": "Medayork",
       "emoji": "🌆",
       "hiddenName": false,
-      "revealNameAtPercent": 30,
+      "revealNameAtPercent": 0,
       "challenges": [
         {
           "id": "medayork_r1",
-          "title": "Ciudad 1",
+          "title": "Enigma 1",
           "riddle": {
-            "riddle": "¿Qué me enamora de ti cada día?",
-            "answer": "tu forma",
+            "riddle": "Las estrellas cuentan una historia,\n\npero la respuesta no está en el cielo.\n\nBusca donde la vida crece sin moverse,\ndonde las espinas protegen lo que importa.\n\nAllí, bajo lo que parece solo tierra,\nduerme la llave.\n\nCompleta: 'cuando se {1} y cuando se {2}'",
+            "answer": "bautiza y casa",
             "hints": [
-              "No es física",
-              "Es única",
-              "Es tu esencia"
+              "Uno ocurre cuando somos pequeños, con agua y fe",
+              "El otro cuando decimos 'sí, acepto' ante todos",
+              "El agua bendita y los votos eternos"
             ],
-            "type": "multiple",
-            "options": [
-              "Tu forma",
-              "Tu prisa",
-              "Tu enojo",
-              "Tu distancia"
-            ]
-          },
-          "media": {
-            "type": "video",
-            "src": "/videos/dreams.mp4",
-            "label": "Video"
-          }
-        },
-        {
-          "id": "medayork_r2",
-          "title": "Ciudad 2",
-          "riddle": {
-            "riddle": "¿Qué quiero construir contigo?",
-            "answer": "futuro",
-            "hints": [
-              "Mirando adelante",
-              "Con planes",
-              "Tú y yo"
-            ],
-            "type": "multiple",
-            "options": [
-              "Futuro",
-              "Distancia",
-              "Temor",
-              "Duda"
-            ]
+            "type": "fill",
+            "confirmationMessage": "Esos dos instantes donde todo el amor del mundo se concentra en una sola persona: tú 💕"
           },
           "media": {
             "type": "image",
-            "src": "/images/medellin-1.jpg",
-            "label": "Imagen"
-          }
-        },
-        {
-          "id": "medayork_r3",
-          "title": "Conexión",
-          "riddle": {
-            "riddle": "¿Qué nunca debería faltarnos?",
-            "answer": "comunicacion",
-            "hints": [
-              "Hablar",
-              "Escuchar",
-              "Entender"
-            ],
-            "type": "multiple",
-            "options": [
-              "Comunicación",
-              "Silencio",
-              "Orgullo",
-              "Frialdad"
-            ]
-          },
-          "media": {
-            "type": "call",
-            "label": "Llamada"
+            "src": "/medayorks/1/enigma.jpeg",
+            "keyImage": "/medayorks/1/key.jpeg",
+            "label": "Un recuerdo muy especial 💕"
           }
         }
       ]
@@ -196,81 +174,85 @@
       "id": "laestrella",
       "title": "La Estrella",
       "emoji": "⭐",
-      "hiddenName": false,
-      "revealNameAtPercent": 30,
+      "hiddenName": true,
+      "revealNameAtPercent": 100,
       "challenges": [
         {
-          "id": "laestrella_r1",
-          "title": "Brillo 1",
+          "id": "laestrella_r2",
+          "title": "Mensaje 2",
           "riddle": {
-            "riddle": "¿Qué es lo que más brilla en ti?",
-            "answer": "sonrisa",
+            "riddle": "Tiene un don secreto: los pajaritos le cuentan sus historias al oído. Comparte tu apellido, creció contigo, y de alguna forma el mundo natural le habla solo a él. ¿Quién es?",
+            "answer": "primo",
             "hints": [
-              "Lo ves en tu cara",
-              "Ilumina cualquier lugar",
-              "Me derrite el corazón"
+              "Comparten abuelos",
+              "Los animales confían en él como en nadie más",
+              "Es de tu familia pero no es tu hermano"
             ],
             "type": "multiple",
             "options": [
-              "Sonrisa",
-              "Dinero",
-              "Orgullo",
-              "Silencio"
-            ]
+              "Primo",
+              "Hermano",
+              "Cuñado",
+              "Amigo"
+            ],
+            "confirmationMessage": "El que entiende el idioma de los pajaritos — y aun así siempre tiene tiempo para ti 🐦🌟"
           },
           "media": {
             "type": "video",
-            "src": "/videos/memories.mp4",
-            "label": "Video especial"
-          }
-        },
-        {
-          "id": "laestrella_r2",
-          "title": "Brillo 2",
-          "riddle": {
-            "riddle": "¿Qué tiene el cielo que también tienes tú?",
-            "answer": "estrellas",
-            "hints": [
-              "Brillan de noche",
-              "No se pueden contar",
-              "Guían el camino"
-            ],
-            "type": "multiple",
-            "options": [
-              "Estrellas",
-              "Nubes",
-              "Lluvia",
-              "Oscuridad"
-            ]
-          },
-          "media": {
-            "type": "image",
-            "src": "/images/estrella-1.jpg",
-            "label": "Foto"
+            "src": "/videos/estrella/primo.mp4",
+            "label": "Mensaje de tu primo 🌟"
           }
         },
         {
           "id": "laestrella_r3",
-          "title": "Conexión estelar",
+          "title": "Mensaje 3",
           "riddle": {
-            "riddle": "¿Qué guía a los navegantes en la oscuridad?",
-            "answer": "estrella",
+            "riddle": "¿Quién cuida de los suyos con amor eterno?",
+            "answer": "tia",
             "hints": [
-              "Está en el cielo",
-              "Siempre fija",
-              "El norte verdadero"
+              "Hermana de uno de tus papás",
+              "Siempre con un abrazo listo",
+              "La recuerdas desde niña"
             ],
             "type": "multiple",
             "options": [
-              "Estrella",
-              "Brújula",
-              "Mapa",
-              "Linterna"
-            ]
+              "Tía",
+              "Mamá",
+              "Abuela",
+              "Prima"
+            ],
+            "confirmationMessage": "El abrazo que nunca falla — siempre listo, sin importar cuánto tiempo pase 💛"
           },
           "media": {
-            "type": "call",
-            "label": "Llamada estelar"
+            "type": "video",
+            "src": "/videos/estrella/tiama.mp4",
+            "label": "Mensaje de tu tía 💛"
+          }
+        },
+        {
+          "id": "laestrella_r4",
+          "title": "Mensaje 4",
+          "riddle": {
+            "riddle": "En el Evangelio, cuando llamaron a mi tocaya, la nombraron dos veces seguidas — porque lo que venía era importante. Yo también tengo algo importante para ti hoy. ¿Quién soy?",
+            "answer": "tia marta",
+            "hints": [
+              "Su tocaya bíblica cocinaba y servía con mucho amor",
+              "Jesús la llamó dos veces por su nombre",
+              "Su nombre empieza con M"
+            ],
+            "type": "multiple",
+            "options": [
+              "Tía Marta",
+              "Tía Sandra",
+              "Prima Laura",
+              "Mamá"
+            ],
+            "confirmationMessage": "¡Sí! Como su tocaya bíblica, Tía Marta siempre da todo de sí — con ese amor que no necesita pedirse 💜"
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/estrella/tiamarta2.mp4",
+            "label": "Mensaje de tía Marta 💜"
           }
         }
       ]
@@ -280,8 +262,29 @@
       "title": "Medayork",
       "emoji": "🏙️",
       "hiddenName": false,
-      "revealNameAtPercent": 30,
+      "revealNameAtPercent": 0,
       "challenges": [
+        {
+          "id": "medayork2_r0",
+          "title": "Enigma 2",
+          "riddle": {
+            "riddle": "Pero hoy,\nuna puerta se abrirá\ngracias a lo que se esconde\nentre estas páginas.\n\nLa creatividad y los códigos\nla llevan al infinito y más allá.\nEscribe aquí debajo el código.",
+            "answer": "0311",
+            "hints": [
+              "Es una fecha muy especial",
+              "Tiene que ver con alguien que conoces muy bien",
+              "Los dígitos son 0, 3, 1 y 1"
+            ],
+            "type": "text",
+            "confirmationMessage": "03/11 — la fecha que le dio color a este mundo ✨"
+          },
+          "media": {
+            "type": "image",
+            "src": "/medayorks/2/enigma.jpg",
+            "keyImage": "/medayorks/2/key.jpg",
+            "label": "La fecha que cambió todo ✨"
+          }
+        },
         {
           "id": "medayork2_r1",
           "title": "Regreso 1",
@@ -299,7 +302,8 @@
               "Indiferencia",
               "Hastío",
               "Confusión"
-            ]
+            ],
+            "confirmationMessage": "Esa mezcla dulce-amarga que solo sientes cuando algo realmente importa 🏙️"
           },
           "media": {
             "type": "video",
@@ -324,7 +328,8 @@
               "Aburrimiento",
               "Obligación",
               "Costumbre"
-            ]
+            ],
+            "confirmationMessage": "Los lugares no son los que importan — son las memorias que dejamos en ellos ✨"
           },
           "media": {
             "type": "image",
@@ -349,7 +354,8 @@
               "Escapar",
               "Fingir",
               "Aguantar"
-            ]
+            ],
+            "confirmationMessage": "Contigo cada momento se convierte en algo que vale la pena recordar ❤️"
           },
           "media": {
             "type": "call",
@@ -362,81 +368,242 @@
       "id": "lejano",
       "title": "Un lugar muy lejano",
       "emoji": "🌌",
-      "hiddenName": false,
-      "revealNameAtPercent": 30,
+      "hiddenName": true,
+      "revealNameAtPercent": 100,
       "challenges": [
         {
           "id": "lejano_r1",
-          "title": "Lejano 1",
+          "title": "Mensaje 1",
           "riddle": {
-            "riddle": "¿Qué nos mantiene unidos incluso a distancia?",
-            "answer": "amor",
+            "riddle": "¿Quién te dio la vida y te ama sin condición?",
+            "answer": "mamá",
             "hints": [
-              "No se ve",
-              "Se siente",
-              "Nos conecta"
+              "La persona más importante",
+              "Siempre está para ti",
+              "Tu mayor amor"
             ],
             "type": "multiple",
             "options": [
-              "Amor",
-              "Miedo",
-              "Olvido",
-              "Duda"
-            ]
+              "Mamá",
+              "Abuela",
+              "Tía",
+              "Hermana"
+            ],
+            "confirmationMessage": "El amor más grande que existe — incondicional, eterno y sin límite 💗"
           },
           "media": {
             "type": "video",
-            "src": "/videos/future.mp4",
-            "label": "Video lejano"
+            "src": "/videos/un_lugar_lejano/madre.mp4",
+            "label": "Mensaje de tu mamá 💗"
           }
         },
         {
           "id": "lejano_r2",
-          "title": "Lejano 2",
+          "title": "Mensaje 2",
           "riddle": {
-            "riddle": "¿Qué queremos cruzar juntos?",
-            "answer": "fronteras",
+            "riddle": "¿Quién comparte sangre y recuerdos contigo desde lejos?",
+            "answer": "primo",
             "hints": [
-              "No son paredes",
-              "Separan países",
-              "Se pueden cruzar"
+              "Comparten abuelos",
+              "Creció en otra ciudad",
+              "Lo quieres mucho igual"
             ],
             "type": "multiple",
             "options": [
-              "Fronteras",
-              "Excusas",
-              "Temores",
-              "Límites"
-            ]
+              "Primo",
+              "Hermano",
+              "Cuñado",
+              "Vecino"
+            ],
+            "confirmationMessage": "La distancia nunca pudo con ese cariño — siempre primo, siempre familia 🌌"
           },
           "media": {
             "type": "video",
-            "src": "/videos/adventures.mp4",
-            "label": "Video lejano"
+            "src": "/videos/un_lugar_lejano/primo.mp4",
+            "label": "Mensaje de tu primo 🌌"
           }
         },
         {
           "id": "lejano_r3",
-          "title": "Lejano 3",
+          "title": "Mensaje 3",
           "riddle": {
-            "riddle": "¿Qué sueño compartimos para el futuro?",
-            "answer": "encontrarnos",
+            "riddle": "¿Quién siempre está ahí para los suyos sin importar la distancia?",
+            "answer": "tia",
             "hints": [
-              "Volver a vernos",
-              "Cara a cara",
-              "Pronto"
+              "Hermana de uno de tus papás",
+              "La distancia no la detiene",
+              "Te tiene en el corazón"
             ],
             "type": "multiple",
             "options": [
-              "Encontrarnos",
-              "Esperar",
-              "Callar",
-              "Dudar"
-            ]
+              "Tía",
+              "Prima",
+              "Abuela",
+              "Mamá"
+            ],
+            "confirmationMessage": "Miles de kilómetros y aun así presente — eso es amor de tía 🌠"
           },
           "media": {
-            "type": "call",
-            "label": "Llamada lejana"
+            "type": "video",
+            "src": "/videos/un_lugar_lejano/tiam.mp4",
+            "label": "Mensaje de tu tía 🌠"
+          }
+        }
+      ]
+    },
+    {
+      "id": "carepa",
+      "title": "Carepa",
+      "emoji": "🌿",
+      "hiddenName": true,
+      "revealNameAtPercent": 100,
+      "challenges": [
+        {
+          "id": "carepa_r1",
+          "title": "Mensaje 1",
+          "riddle": {
+            "riddle": "No son hermanos de sangre, pero llegaron a tu familia por amor — y desde ese día son parte de tu historia para siempre. ¿Cómo se llama ese lazo?",
+            "answer": "cuñados",
+            "hints": [
+              "No comparten tu apellido de nacimiento",
+              "Llegaron por el matrimonio",
+              "Los quieres como propios"
+            ],
+            "type": "multiple",
+            "options": [
+              "Cuñados",
+              "Primos",
+              "Hermanos",
+              "Vecinos"
+            ],
+            "confirmationMessage": "Cuñados — los que llegaron por amor y se quedaron para siempre en el corazón 🌿"
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/carepa/familiatati.mp4",
+            "keyImage": "/carepa.png",
+            "label": "Mensaje de la familia 🌿"
+          }
+        },
+        {
+          "id": "carepa_r2",
+          "title": "Mensaje 2",
+          "riddle": {
+            "riddle": "¿Cómo se llama esta persona especial que te tiene un mensaje?",
+            "answer": "jorge",
+            "hints": [
+              "Es un nombre masculino",
+              "Empieza con J",
+              "Es alguien de confianza"
+            ],
+            "type": "multiple",
+            "options": [
+              "Jorge",
+              "Carlos",
+              "Andrés",
+              "Luis"
+            ],
+            "confirmationMessage": "Jorge — alguien que te quiere con una sencillez que vale más que mil palabras 💚"
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/carepa/jorge.mp4",
+            "label": "Mensaje de Jorge 💚"
+          }
+        }
+      ]
+    },
+    {
+      "id": "turbo",
+      "title": "Turbo",
+      "emoji": "🌊",
+      "hiddenName": true,
+      "revealNameAtPercent": 100,
+      "challenges": [
+        {
+          "id": "turbo_r1",
+          "title": "Mensaje de Turbo",
+          "riddle": {
+            "riddle": "¿En qué ciudad del Urabá está este lugar tan especial?",
+            "answer": "turbo",
+            "hints": [
+              "Está en el Golfo de Urabá",
+              "Nombre de motor, pero es ciudad",
+              "Cerca del mar Caribe"
+            ],
+            "type": "multiple",
+            "options": [
+              "Turbo",
+              "Carepa",
+              "Apartadó",
+              "Necoclí"
+            ],
+            "confirmationMessage": "Turbo — donde el mar Caribe guarda secretos y el amor llega con la brisa 🌊"
+          },
+          "media": {
+            "type": "video",
+            "src": "/videos/turbo/turbo.mp4",
+            "label": "Desde Turbo con amor 🌊"
+          }
+        }
+      ]
+    },
+    {
+      "id": "enigma1",
+      "title": "Medayork 3",
+      "emoji": "🌆",
+      "hiddenName": false,
+      "revealNameAtPercent": 0,
+      "challenges": [
+        {
+          "id": "enigma1_r1",
+          "title": "Enigma 3",
+          "riddle": {
+            "riddle": "Dios ha sido tan bueno... y cuando contemplas ese retrato que guardas en el alma, no puedes evitar completar esta frase: 'mi {1} y mi {2} todo se lo debo a Él'",
+            "answer": "despertar y amanecer",
+            "hints": [
+              "Son dos palabras que tienen que ver con comenzar el día",
+              "La primera toca algo profundo del alma",
+              "La segunda es cuando la luz llega por primera vez"
+            ],
+            "type": "fill",
+            "confirmationMessage": "Mi despertar y mi amanecer todo se lo debo a Él ❤️"
+          },
+          "media": {
+            "type": "image",
+            "src": "/medayorks/3/enigma.jpeg",
+            "keyImage": "/medayorks/3/key.jpeg",
+            "label": "Todo se lo debo a Él ❤️"
+          }
+        }
+      ]
+    },
+    {
+      "id": "enigma2",
+      "title": "Medayork 4",
+      "emoji": "🌆",
+      "hiddenName": false,
+      "revealNameAtPercent": 0,
+      "challenges": [
+        {
+          "id": "enigma2_r1",
+          "title": "Enigma 4",
+          "riddle": {
+            "riddle": "En Su Palabra encontrarás palabras de vida y Él guía tus caminos por sendas de paz. Sin embargo, en tu Biblia hay hoy un secreto escondido — algo que no es Su Palabra pero lo puse allí para ti. Ve, encuéntralo y escríbelo aquí.",
+            "answer": "amor",
+            "hints": [
+              "Está escondido físicamente en tu Biblia",
+              "Lo puse yo justo para este momento",
+              "De paso, piensas en Él"
+            ],
+            "type": "text",
+            "confirmationMessage": "Su Palabra viva y Su amor eterno — todo junto, solo para ti 📖✨"
+          },
+          "media": {
+            "type": "image",
+            "src": "/medayorks/4/enigma1.jpeg",
+            "keyImage": "/medayorks/4/key.jpeg",
+            "label": "El secreto de Su Palabra 📖"
           }
         }
       ]

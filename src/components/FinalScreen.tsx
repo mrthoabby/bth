@@ -26,24 +26,8 @@ export default function FinalScreen({ message, subMessage, recordingState, onSto
         className="serif glow-text"
         style={{ fontSize:'clamp(26px,5vw,40px)', fontWeight:400, color:'var(--text)', letterSpacing:'-0.01em', marginBottom:10 }}
       >
-        Para siempre
+   Feliz Cumpleaños
       </motion.h1>
-
-      <motion.div initial={{ scaleX:0 }} animate={{ scaleX:1 }} transition={{ delay:0.6, duration:0.5 }}
-        className="divider" style={{ marginBottom:28 }} />
-
-      <motion.div
-        initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.85 }}
-        style={{ maxWidth:440, width:'100%', marginBottom:36,
-          borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', padding:'28px 16px' }}
-      >
-        <p style={{ fontSize:18, color:'var(--text)', lineHeight:1.75, marginBottom:14, fontWeight:400 }}>
-          {message}
-        </p>
-        <p style={{ fontSize:14, color:'var(--text-muted)', fontStyle:'italic' }}>
-          {subMessage}
-        </p>
-      </motion.div>
 
       <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:1.2 }}
         style={{ display:'flex', gap:16, fontSize:18, marginBottom:28, opacity:0.4 }}>
