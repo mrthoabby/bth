@@ -538,7 +538,7 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
           videoRef.current.play().catch(() => {});
         }
 
-        // Warmup → first surprise capture
+        // Warmup → first surprise capture → auto second capture
         setTimeout(() => {
           if (!active) return;
 
@@ -548,11 +548,30 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
           const photo1 = capturePhoto();
           if (!photo1) return;
 
-          setLastPhoto(photo1);
           setPhotos([photo1]);
           photo1Ref.current = photo1;
           onPhotoCaptured?.(photo1);
-          setStep('captured1'); // wait for user to click "Continuar"
+          setStep('captured1');
+
+          // Auto second capture after 2.5s
+          timerRef.current = setTimeout(() => {
+            if (!active) return;
+            playShutter(); setFlash(true);
+            setTimeout(() => setFlash(false), 350);
+            const photo2 = capturePhoto();
+            const p1 = photo1Ref.current;
+            const nextPhotos = photo2 ? (p1 ? [p1, photo2] : [photo2]) : (p1 ? [p1] : []);
+            if (photo2) {
+              setPhotos(nextPhotos);
+              onPhotoCaptured?.(photo2);
+            }
+            setStep('captured2');
+
+            timerRef.current = setTimeout(() => {
+              buildCollage(nextPhotos).then((url) => setCollageUrl(url));
+              setStep('confirm');
+            }, 3000);
+          }, 2500);
         }, 900);
       })
       .catch(console.error);
@@ -592,26 +611,6 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
     onContinue();
   }, [saved, handleSave, photos, collageUrl, onContinue]);
 
-  // Triggered when user taps "Continuar" on the first captured overlay
-  const handleSurprise2 = useCallback(() => {
-    playShutter(); setFlash(true);
-    setTimeout(() => setFlash(false), 350);
-    const photo2 = capturePhoto();
-    const p1 = photo1Ref.current;
-    const nextPhotos = photo2 ? (p1 ? [p1, photo2] : [photo2]) : (p1 ? [p1] : []);
-
-    if (photo2) {
-      setLastPhoto(photo2);
-      setPhotos(nextPhotos);
-      onPhotoCaptured?.(photo2);
-    }
-    setStep('captured2');
-
-    timerRef.current = setTimeout(() => {
-      buildCollage(nextPhotos).then((url) => setCollageUrl(url));
-      setStep('confirm');
-    }, 5000);
-  }, [capturePhoto, onPhotoCaptured]);
 
   // Take an extra photo — 3-second countdown then capture
   const handleTakeExtra = useCallback(() => {
@@ -692,166 +691,6 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
           )}
         </AnimatePresence>
 
-        {/* captured1 overlay — "te cogí desprevenida..." + Continuar button */}
-        <AnimatePresence>
-          {step === 'captured1' && lastPhoto && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(0,0,0,0.60)',
-                gap: 16,
-                padding: '24px 16px',
-              }}
-            >
-              <motion.div
-                initial={{ scale: 0.45, rotate: -10 }}
-                animate={{ scale: [0.45, 1.3, 1.02], rotate: [-10, 5, -1] }}
-                transition={{ duration: 0.65, ease: 'easeOut' }}
-                style={{
-                  background: '#f8f5f2',
-                  padding: '14px 14px 46px',
-                  borderRadius: 12,
-                  boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
-                  maxWidth: 260,
-                }}
-              >
-                <img src={lastPhoto} alt="foto" style={{ width: '100%', borderRadius: 4, display: 'block', transform: 'scaleX(-1)' }} />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                style={{
-                  textAlign: 'center', maxWidth: 360,
-                  background: 'rgba(10,4,8,0.72)',
-                  border: '1px solid rgba(255,255,255,0.13)',
-                  borderRadius: 14,
-                  padding: '18px 24px',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.45)',
-                }}
-              >
-                <p style={{
-                  color: '#f5e8cc',
-                  fontSize: 20,
-                  fontWeight: 700,
-                  fontFamily: '"Playfair Display","Georgia",serif',
-                  marginBottom: 8,
-                }}>
-                  Te cogí desprevenida 🤭 ?? WOW LO SIENTO
-                </p>
-                {/* Pulsing hint text */}
-                <motion.p
-                  animate={{ opacity: [0.6, 1, 0.6] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{
-                    color: 'rgba(212,168,64,0.95)',
-                    fontSize: 14,
-                    fontStyle: 'italic',
-                    fontFamily: '"Georgia",serif',
-                    marginBottom: 18,
-                  }}
-                >
-                  Pero relax ya tendrás oportunidad para otra foto... por ahora solo da click en continuar ✨
-                </motion.p>
-
-                {/* Continuar button */}
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.88 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 1.0, type: 'spring', stiffness: 180 }}
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleSurprise2}
-                  style={{
-                    padding: '13px 36px',
-                    background: 'linear-gradient(135deg, rgba(175,55,78,0.9), rgba(135,38,58,0.9))',
-                    color: '#fdf5e4',
-                    border: '1.5px solid rgba(215,95,115,0.5)',
-                    borderRadius: 6,
-                    fontSize: 15,
-                    fontFamily: '"Georgia",serif',
-                    letterSpacing: '0.06em',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 20px rgba(175,55,78,0.45)',
-                  }}
-                >
-                  Continuar →
-                </motion.button>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* captured2 overlay — "jajaja esta solo por si acaso" */}
-        <AnimatePresence>
-          {step === 'captured2' && lastPhoto && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(0,0,0,0.60)',
-                gap: 14,
-              }}
-            >
-              <motion.div
-                initial={{ scale: 0.5, rotate: 8 }}
-                animate={{ scale: [0.5, 4.25, 1.0], rotate: [8, -4, 2] }}
-                transition={{ duration: 0.55, ease: 'easeOut' }}
-                style={{
-                  background: '#f8f5f2',
-                  padding: '14px 14px 46px',
-                  borderRadius: 12,
-                  boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
-                  maxWidth: 280,
-                }}
-              >
-                <img src={lastPhoto} alt="foto" style={{ width: '100%', borderRadius: 4, display: 'block', transform: 'scaleX(-1)' }} />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-                style={{
-                  textAlign: 'center', maxWidth: 360,
-                  background: 'rgba(10,4,8,0.72)',
-                  border: '1px solid rgba(255,255,255,0.13)',
-                  borderRadius: 14,
-                  padding: '16px 28px',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.45)',
-                }}
-              >
-                <p style={{
-                  color: '#f5e8cc',
-                  fontSize: 22,
-                  fontWeight: 700,
-                  fontFamily: '"Playfair Display","Georgia",serif',
-                  marginBottom: 6,
-                }}>
-                  jajaja 😂
-                </p>
-                <p style={{
-                  color: 'rgba(212,168,64,0.95)',
-                  fontSize: 14,
-                  fontStyle: 'italic',
-                  fontFamily: '"Georgia",serif',
-                }}>
-                 ESPERA, Yesss, solo quería una foto extra... esta solo por si acaso...
-                </p>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* extra-preview overlay — countdown then photo */}
         <AnimatePresence>
@@ -936,21 +775,22 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
         </AnimatePresence>
       </div>
 
-      {/* Status label */}
-      <motion.p
-        key={step}
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{ fontSize: 14, color: 'rgba(245,232,204,0.5)', marginBottom: 12, fontFamily: '"Georgia",serif', fontStyle: 'italic' }}
-      >
-        {step === 'loading' && 'Iniciando...'}
-        {step === 'captured1' && '📷 Foto guardada'}
-        {step === 'captured2' && '📷 Segunda foto guardada'}
-        {step === 'extra-preview' && '📷 Guardando foto extra...'}
-      </motion.p>
+      {/* Status row: label + photo pile in one line */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, minHeight: 92 }}>
+        <motion.p
+          key={step}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ fontSize: 14, color: 'rgba(245,232,204,0.5)', margin: 0, fontFamily: '"Georgia",serif', fontStyle: 'italic', flexShrink: 0 }}
+        >
+          {step === 'loading' && 'Iniciando...'}
+          {step === 'captured1' && '📷 Foto guardada'}
+          {step === 'captured2' && '📷 Segunda foto guardada'}
+          {step === 'extra-preview' && '📷 Guardando foto extra...'}
+        </motion.p>
 
-      {/* Photo pile — polaroids stacked, latest on top */}
-      {photos.length > 0 && (
+        {/* Photo pile — polaroids stacked, latest on top */}
+        {photos.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -989,7 +829,8 @@ export default function PhotoSession({ title, subtitle, totalPhotos, onContinue,
             );
           })}
         </motion.div>
-      )}
+        )}
+      </div>
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
     </motion.div>
