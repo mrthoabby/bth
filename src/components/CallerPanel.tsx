@@ -312,12 +312,6 @@ function AdminInner() {
   const spectatorCamTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
     .filter((t) => t.participant.identity.startsWith('espectador'));
 
-  useEffect(() => {
-    room.localParticipant.setCameraEnabled(true).catch(() => {});
-    room.localParticipant.setMicrophoneEnabled(false).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // On connect: camera ON, mic OFF — guaranteed order, no race
   useEffect(() => {
     const apply = () => {

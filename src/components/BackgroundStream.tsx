@@ -67,10 +67,30 @@ function SpectatorSilencer() {
     participants.forEach((p) => {
       if (!p.identity.startsWith('espectador')) return;
       p.audioTrackPublications.forEach((pub) => {
-        (pub.track as RemoteAudioTrack | undefined)?.setVolume(0);
+        try {
+          (pub.track as RemoteAudioTrack | undefined)?.setVolume(0);
+        } catch { /* participant may not be fully registered yet */ }
       });
     });
   }, [participants]);
+  return null;
+}
+
+// Ensures the browser audio context is started so RoomAudioRenderer can play remote tracks.
+// Called on every user interaction so it works even if autoplay was blocked at connect time.
+function AudioActivator() {
+  const room = useRoomContext();
+  useEffect(() => {
+    const activate = () => {
+      if (!room.canPlaybackAudio) {
+        room.startAudio().catch(() => {});
+      }
+    };
+    // Try immediately in case audio context is already unlocked
+    activate();
+    document.addEventListener('pointerdown', activate);
+    return () => { document.removeEventListener('pointerdown', activate); };
+  }, [room]);
   return null;
 }
 
@@ -88,8 +108,9 @@ export default function BackgroundStream({
   children?: React.ReactNode;
 }) {
   return (
-    <LiveKitRoom token={token} serverUrl={serverUrl} connect video={false} audio={false}>
+    <LiveKitRoom token={token} serverUrl={serverUrl} connect video={false}>
       <Publisher camStream={camStream} screenStream={screenStream} />
+      <AudioActivator />
       <SpectatorSilencer />
       <RoomAudioRenderer />
       {children}
