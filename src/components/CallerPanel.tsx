@@ -600,7 +600,7 @@ export default function CallerPanel() {
   }
 
   return (
-    <LiveKitRoom token={token} serverUrl={serverUrl} connect video={true} audio={false}>
+    <LiveKitRoom token={token} serverUrl={serverUrl} connect video={true} audio={true}>
       <AdminInner />
     </LiveKitRoom>
   );
